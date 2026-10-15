@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misi Angkasa: Ukuran Panjang Tahun 5 (AR)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #090d16 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .stars {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            animation: twinkle 5s infinite;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+        .spaceship-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        .grid-bg {
+            background-image:
+                linear-gradient(rgba(99,102,241,0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.12) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(99, 102, 241, 0.4);
+        }
+        #stage { touch-action: none; }
+        /* ===== Gelembung Jawapan AR ===== */
+        @keyframes bob {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-14px); }
+        }
+        .ar-bubble {
+            position: absolute; transform: translate(-50%, -50%);
+            width: clamp(92px, 20vw, 140px); aspect-ratio: 1; border-radius: 9999px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: 700; font-size: clamp(20px, 3.4vw, 30px); line-height: 1; color: #fff;
+            border: 3px solid rgba(255,255,255,0.75);
+            box-shadow: 0 0 24px rgba(168,85,247,0.55);
+            animation: bob 3s ease-in-out infinite;
+            cursor: pointer; user-select: none; touch-action: manipulation;
+            transition: box-shadow .2s, filter .2s;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+        }
+        .ar-bubble small { font-size: 0.5em; opacity: .9; margin-top: 4px; }
+        .ar-bubble::after {
+            content: ''; position: absolute; inset: -9px; border-radius: 9999px;
+            background: conic-gradient(#fde047 calc(var(--p, 0) * 1%), transparent 0);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+            pointer-events: none;
+        }
+        .ar-bubble:hover, .ar-bubble.hot { box-shadow: 0 0 44px #fde047; filter: brightness(1.15); }
+        .ar-bubble.correct { background: radial-gradient(circle at 30% 30%, #a7f3d0, #059669 60%) !important; animation: none; box-shadow: 0 0 50px #34d399; }
+        .ar-bubble.wrong { background: radial-gradient(circle at 30% 30%, #fecdd3, #be123c 60%) !important; animation: none; }
+        .ar-bubble.dim { opacity: .35; animation: none; }
+        .ans-mode-btn.active { background: linear-gradient(90deg, #d946ef, #6366f1); border-color: #f0abfc; color: #fff; }
+        #ruler { touch-action: none; cursor: grab; }
+        #ruler:active { cursor: grabbing; }
+        .component-bar {
+            background: linear-gradient(180deg, #67e8f9 0%, #0891b2 55%, #155e75 100%);
+            border-left: 3px solid #fde047;
+            border-right: 3px solid #fde047;
+            box-shadow: 0 0 18px rgba(103,232,249,0.45);
+        }
+        .pv-cell { min-width: 2.2rem; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
+    </style>
+</head>
+<body class="relative flex flex-col justify-between min-h-screen p-4 md:p-6">
+
+    <div class="stars"></div>
+
+    <!-- Bar Status Atas -->
+    <header class="relative z-10 max-w-5xl w-full mx-auto flex flex-wrap justify-between items-center gap-4 glass-panel p-4 rounded-2xl shadow-lg">
+        <div class="flex items-center gap-3">
+            <span class="text-3xl">🚀</span>
+            <div>
+                <h1 class="text-xl font-bold text-indigo-300 leading-none">MISI ANGKASA: UKURAN PANJANG</h1>
+                <p class="text-xs text-slate-300">Matematik Tahun 5 (1 cm = 10 mm) • Edisi AR</p>
+            </div>
+        </div>
+        <div id="hud" class="hidden flex items-center gap-4 md:gap-6">
+            <div class="flex items-center gap-1 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+                <span class="text-amber-400 text-xl">⚡</span>
+                <span class="text-xs text-slate-400">Kombo:</span>
+                <span id="streak-display" class="font-bold text-amber-400">0</span>
+            </div>
+            <div class="flex items-center gap-1 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+                <span class="text-emerald-400 text-xl">⭐</span>
+                <span class="text-xs text-slate-400">Markah:</span>
+                <span id="score-display" class="font-bold text-emerald-400 text-lg">0</span>
+            </div>
+            <div id="lives-display" class="flex items-center gap-1 text-xl">❤️❤️❤️</div>
+        </div>
+    </header>
+
+    <main class="relative z-10 max-w-5xl w-full mx-auto my-auto py-6">
+
+        <!-- SKRIN 1: MULA -->
+        <section id="start-screen" class="glass-panel rounded-3xl p-6 md:p-10 text-center shadow-2xl">
+            <div class="spaceship-float inline-block text-7xl mb-4">🛸</div>
+            <h2 class="text-3xl md:text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">
+                Selamat Datang, Kapten!
+            </h2>
+            <p class="text-slate-300 max-w-xl mx-auto mb-6">
+                Kapal angkasa kita memerlukan komponen yang tepat untuk berlepas. Ukur, tukar unit <b>sentimeter (cm)</b> dan <b>milimeter (mm)</b>, dan baiki kapal!
+            </p>
+
+            <div class="max-w-md mx-auto bg-slate-900/60 p-5 rounded-2xl border border-slate-700/80 mb-8 text-left">
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-1">Nama Kapten (Murid):</label>
+                    <input type="text" id="player-name" placeholder="Contoh: Amirul" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-1">Skuadron (Kelas):</label>
+                    <input type="text" id="player-class" placeholder="Contoh: 5 Bestari" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition">
+                </div>
+            </div>
+
+            <div class="bg-indigo-950/60 border border-indigo-500/30 rounded-2xl p-4 max-w-lg mx-auto mb-8 flex flex-col sm:flex-row items-center justify-around gap-4">
+                <div class="text-center">
+                    <span class="text-xs text-indigo-300 block">Formula Asas</span>
+                    <span class="text-xl font-bold text-cyan-300">1 cm = 10 mm</span>
+                </div>
+                <div class="h-8 w-px bg-indigo-500/30 hidden sm:block"></div>
+                <div class="text-sm text-left space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded text-xs font-bold">cm ➔ mm</span>
+                        <span>Darab 10 ( <b class="text-amber-300">× 10</b> )</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded text-xs font-bold">mm ➔ cm</span>
+                        <span>Bahagi 10 ( <b class="text-amber-300">÷ 10</b> )</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cara Menjawab -->
+            <div class="max-w-xl mx-auto mb-6 bg-slate-900/60 border border-fuchsia-500/30 rounded-2xl p-4">
+                <p class="text-xs font-semibold uppercase tracking-wider text-fuchsia-300 mb-2">Cara Menjawab (Misi Diagnostik / Nombor Bulat / Perpuluhan):</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button id="ans-type" onclick="setAnswerMode('type')" class="ans-mode-btn active px-4 py-2 rounded-xl border border-slate-600 bg-slate-800 text-slate-300 text-sm font-bold transition">⌨️ Taip Jawapan</button>
+                    <button id="ans-ar" onclick="setAnswerMode('ar')" class="ans-mode-btn px-4 py-2 rounded-xl border border-slate-600 bg-slate-800 text-slate-300 text-sm font-bold transition">🖐️ Pilih Jawapan AR</button>
+                </div>
+                <p id="ans-mode-note" class="text-[11px] text-slate-400 mt-2">Murid menaip jawapan dalam kotak.</p>
+            </div>
+
+            <h3 class="text-lg font-semibold text-slate-200 mb-4">Pilih Misi Anda:</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <button onclick="startGame('diagnostic')" class="group bg-gradient-to-b from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 p-5 rounded-2xl border-2 border-indigo-400 transition transform hover:-translate-y-1 shadow-lg text-left flex flex-col justify-between">
+                    <div>
+                        <span class="bg-indigo-900 text-indigo-200 text-xs px-2.5 py-1 rounded-full font-bold">10 Soalan Rasmi</span>
+                        <h4 class="text-xl font-bold mt-3 mb-1 text-white group-hover:text-cyan-300 transition">📋 Misi Diagnostik</h4>
+                        <p class="text-xs text-indigo-200">Soalan penuh daripada kertas Ujian Diagnostik (Bahagian A & B).</p>
+                    </div>
+                    <div class="mt-4 text-right text-sm font-bold text-cyan-300">Mula Misi ➔</div>
+                </button>
+                <button onclick="startGame('whole')" class="group bg-gradient-to-b from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 p-5 rounded-2xl border-2 border-emerald-400 transition transform hover:-translate-y-1 shadow-lg text-left flex flex-col justify-between">
+                    <div>
+                        <span class="bg-emerald-900 text-emerald-200 text-xs px-2.5 py-1 rounded-full font-bold">Tahap 1 (SP 1)</span>
+                        <h4 class="text-xl font-bold mt-3 mb-1 text-white group-hover:text-amber-300 transition">🔢 Nombor Bulat</h4>
+                        <p class="text-xs text-emerald-100">Latihan rawak menukar unit melibatkan nombor bulat sahaja.</p>
+                    </div>
+                    <div class="mt-4 text-right text-sm font-bold text-amber-300">Berlatih ➔</div>
+                </button>
+                <button onclick="startGame('decimal')" class="group bg-gradient-to-b from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 p-5 rounded-2xl border-2 border-purple-400 transition transform hover:-translate-y-1 shadow-lg text-left flex flex-col justify-between">
+                    <div>
+                        <span class="bg-purple-900 text-purple-200 text-xs px-2.5 py-1 rounded-full font-bold">Tahap 2 (SP 2)</span>
+                        <h4 class="text-xl font-bold mt-3 mb-1 text-white group-hover:text-pink-300 transition">🎯 Perpuluhan</h4>
+                        <p class="text-xs text-purple-100">Latihan rawak menukar unit melibatkan nombor perpuluhan.</p>
+                    </div>
+                    <div class="mt-4 text-right text-sm font-bold text-pink-300">Berlatih ➔</div>
+                </button>
+            </div>
+
+            <!-- MOD BAHARU: PENGUKURAN SEBENAR -->
+            <div class="mt-6 max-w-4xl mx-auto">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="h-px flex-1 bg-gradient-to-r from-transparent to-amber-400/60"></div>
+                    <span class="text-xs font-bold tracking-widest text-amber-300">✨ MOD BAHARU: UKUR & TUKAR</span>
+                    <div class="h-px flex-1 bg-gradient-to-l from-transparent to-amber-400/60"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="startGame('lab')" class="group bg-gradient-to-b from-cyan-600 to-sky-900 hover:from-cyan-500 hover:to-sky-800 p-5 rounded-2xl border-2 border-cyan-300 transition transform hover:-translate-y-1 shadow-lg text-left">
+                        <span class="bg-sky-950 text-cyan-200 text-xs px-2.5 py-1 rounded-full font-bold">Sesuai untuk Projektor / Tablet</span>
+                        <h4 class="text-xl font-bold mt-3 mb-1 text-white">📏 Makmal Pembaris Maya</h4>
+                        <p class="text-xs text-cyan-100">Seret & putar pembaris maya untuk mengukur komponen kapal angkasa, kemudian tukar bacaan ke mm. Tiada kamera diperlukan.</p>
+                        <div class="mt-3 text-right text-sm font-bold text-amber-300">Masuk Makmal ➔</div>
+                    </button>
+                    <button onclick="startGame('ar')" class="group bg-gradient-to-b from-rose-600 to-fuchsia-900 hover:from-rose-500 hover:to-fuchsia-800 p-5 rounded-2xl border-2 border-rose-300 transition transform hover:-translate-y-1 shadow-lg text-left">
+                        <span class="bg-fuchsia-950 text-rose-200 text-xs px-2.5 py-1 rounded-full font-bold">AR • Guna Kamera Peranti</span>
+                        <h4 class="text-xl font-bold mt-3 mb-1 text-white">📷 Pembaris AR</h4>
+                        <p class="text-xs text-rose-100">Pembaris maya muncul di atas paparan kamera. Ukur objek sebenar di dalam kelas (pemadam, pensel, krayon) dan tukar unitnya.</p>
+                        <div class="mt-3 text-right text-sm font-bold text-amber-300">Hidupkan AR ➔</div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SKRIN 2: SOALAN TUKAR UNIT -->
+        <section id="game-screen" class="hidden glass-panel rounded-3xl p-6 md:p-8 shadow-2xl">
+            <div class="mb-6">
+                <div class="flex justify-between text-xs font-semibold text-slate-300 mb-2">
+                    <span id="mission-title">MISI DIAGNOSTIK</span>
+                    <span id="question-counter">Soalan 1 / 10</span>
+                </div>
+                <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                    <div id="progress-bar" class="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-500" style="width: 10%"></div>
+                </div>
+            </div>
+
+            <div class="text-center mb-4">
+                <span id="category-badge" class="inline-block bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 text-xs font-bold px-3 py-1 rounded-full">BAHAGIAN A: NOMBOR BULAT</span>
+            </div>
+
+            <div class="bg-slate-900/90 border-2 border-slate-700 rounded-2xl p-6 md:p-10 text-center mb-6">
+                <p class="text-xs text-slate-400 uppercase tracking-widest mb-3">Tukarkan ukuran komponen berikut:</p>
+                <div class="flex flex-wrap items-center justify-center gap-3 md:gap-5 text-3xl md:text-5xl font-bold">
+                    <span id="q-value" class="text-cyan-400">5</span>
+                    <span id="q-from-unit" class="text-slate-300">cm</span>
+                    <span class="text-slate-500">=</span>
+                    <input type="number" step="any" id="answer-input" placeholder="?"
+                        class="w-36 md:w-44 bg-slate-800 border-b-4 border-indigo-500 text-center text-amber-300 rounded-xl py-2 px-3 focus:outline-none focus:border-cyan-400 transition"
+                        onkeydown="if(event.key === 'Enter') checkAnswer()">
+                    <span id="q-blank" class="hidden text-amber-300 bg-slate-800 border-b-4 border-fuchsia-500 rounded-xl px-6 py-1">?</span>
+                    <span id="q-to-unit" class="text-emerald-400">mm</span>
+                </div>
+                <div id="feedback-msg" class="mt-4 min-h-[28px] text-sm font-bold transition-all"></div>
+            </div>
+
+            <!-- Pentas Jawapan AR -->
+            <div id="ar-answer-wrap" class="hidden mb-6">
+                <div id="ar-stage" class="relative w-full rounded-2xl overflow-hidden border-2 border-fuchsia-500/50 bg-slate-950 grid-bg" style="height: min(55vh, 440px);">
+                    <video id="ar-cam" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden" style="transform: scaleX(-1);"></video>
+                    <div id="ar-bubbles" class="absolute inset-0"></div>
+                    <canvas id="ar-hand" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+                    <div id="ar-status" class="absolute top-2 left-2 text-[11px] bg-slate-900/80 text-slate-200 px-2 py-1 rounded-lg pointer-events-none">Memulakan kamera…</div>
+                    <div class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-slate-900/80 text-fuchsia-200 px-3 py-1 rounded-lg pointer-events-none whitespace-nowrap">Ketik gelembung jawapan • atau tuding dengan jari telunjuk ☝️</div>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2 mt-3 text-xs">
+                    <button id="hand-btn" onclick="toggleHandControl()" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold px-4 py-2 rounded-lg">🖐️ Hidupkan Kawalan Tangan</button>
+                    <button onclick="startArCam()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg">📷 Mulakan Semula Kamera</button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <div class="flex justify-center mb-3">
+                    <button onclick="toggleHint()" class="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                        💡 <span id="hint-btn-text">Buka Radar Bantuan (Nota)</span>
+                    </button>
+                </div>
+                <div id="hint-box" class="hidden bg-slate-900/95 border border-amber-500/40 rounded-xl p-4 text-sm text-slate-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        <div id="hint-explanation" class="space-y-2 text-left bg-slate-800/70 p-3 rounded-lg"></div>
+                        <div class="space-y-3">
+                            <div id="hint-placevalue" class="bg-slate-800/70 p-3 rounded-lg text-left"></div>
+                            <div class="bg-amber-100 text-slate-900 p-3 rounded-lg shadow-inner">
+                                <div class="text-[10px] font-bold uppercase text-slate-600 mb-1 flex justify-between">
+                                    <span>Pembaris Digital Angkasa</span>
+                                    <span>1 cm = 10 senggatan kecil (mm)</span>
+                                </div>
+                                <canvas id="hint-ruler" class="w-full" height="44"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center gap-4">
+                <button onclick="returnToMenu()" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition">⬅ Batal Misi</button>
+                <button id="submit-btn" onclick="checkAnswer()" class="flex-1 md:flex-none md:min-w-[200px] bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform active:scale-95 transition text-lg">
+                    Lancarkan Jawapan! 🚀
+                </button>
+            </div>
+        </section>
+
+        <!-- SKRIN 3: MAKMAL PEMBARIS / AR -->
+        <section id="lab-screen" class="hidden glass-panel rounded-3xl p-4 md:p-6 shadow-2xl">
+            <div class="mb-4">
+                <div class="flex justify-between text-xs font-semibold text-slate-300 mb-2">
+                    <span id="lab-title">📏 MAKMAL PEMBARIS MAYA</span>
+                    <span id="lab-counter">Tugasan 1 / 5</span>
+                </div>
+                <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                    <div id="lab-progress" class="bg-gradient-to-r from-amber-400 to-rose-500 h-full rounded-full transition-all duration-500" style="width: 20%"></div>
+                </div>
+            </div>
+
+            <div id="lab-mission" class="bg-slate-900/80 border border-amber-400/40 rounded-2xl p-4 mb-4 text-left text-sm"></div>
+
+            <!-- Pentas pengukuran -->
+            <div id="stage" class="relative w-full rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-950 grid-bg" style="height: min(55vh, 420px);">
+                <video id="cam" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden"></video>
+                <div id="lab-object" class="absolute hidden rounded-md component-bar flex items-center justify-center text-[11px] font-bold text-slate-900 whitespace-nowrap overflow-hidden" style="height: 30px;"></div>
+                <div id="lab-object-label" class="absolute hidden text-xs font-bold text-cyan-200 whitespace-nowrap"></div>
+                <div id="ruler" class="absolute select-none" style="left: 0; top: 0;">
+                    <canvas id="ruler-canvas" class="block"></canvas>
+                    <div id="marker" class="absolute top-0" style="width: 0; height: 100%;">
+                        <div class="absolute -translate-x-1/2 w-0.5 bg-rose-500" style="top: -18px; height: calc(100% + 18px);"></div>
+                        <div class="absolute -translate-x-1/2 w-8 h-8 rounded-full bg-rose-500 border-4 border-white shadow-lg flex items-center justify-center text-[10px]" style="bottom: -36px;">◆</div>
+                    </div>
+                </div>
+                <div id="cam-msg" class="absolute inset-0 hidden flex-col items-center justify-center text-center p-6 bg-slate-950/90"></div>
+                <div class="absolute top-2 right-2 text-[10px] bg-slate-900/70 text-slate-300 px-2 py-1 rounded-lg pointer-events-none">Seret pembaris • Seret ◆ merah • Ketik pembaris untuk alih penanda</div>
+            </div>
+
+            <!-- Kawalan -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-12 mb-4 text-xs">
+                <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
+                    <label class="flex justify-between text-slate-300 mb-1"><span>🔄 Putar Pembaris</span><span id="rot-val">0°</span></label>
+                    <input id="rot-slider" type="range" min="-90" max="90" value="0" class="w-full accent-cyan-400">
+                </div>
+                <div id="calib-wrap" class="bg-slate-900/70 rounded-xl p-3 border border-rose-500/50 hidden">
+                    <label class="flex justify-between text-slate-300 mb-1"><span>🎯 Kalibrasi Saiz</span><span id="calib-val">38 px/cm</span></label>
+                    <input id="calib-slider" type="range" min="12" max="120" value="38" class="w-full accent-rose-400">
+                </div>
+                <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700 flex flex-wrap gap-2 items-center">
+                    <button onclick="resetRuler()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg">↺ Set Semula Pembaris</button>
+                    <button onclick="toggleReadout()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg">👁️ <span id="readout-btn">Tunjuk Bacaan</span></button>
+                    <span id="marker-readout" class="hidden font-bold text-rose-300 text-sm"></span>
+                </div>
+            </div>
+
+            <!-- Jawapan -->
+            <div class="bg-slate-900/90 border-2 border-slate-700 rounded-2xl p-4 md:p-6 text-center">
+                <div class="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-2xl md:text-4xl font-bold">
+                    <span class="text-slate-400 text-base md:text-lg">Panjang =</span>
+                    <input type="number" step="0.1" id="lab-cm" placeholder="?" class="w-28 md:w-36 bg-slate-800 border-b-4 border-cyan-500 text-center text-cyan-300 rounded-xl py-2 focus:outline-none focus:border-amber-400">
+                    <span class="text-slate-300">cm</span>
+                    <span class="text-slate-500">=</span>
+                    <input type="number" step="any" id="lab-mm" placeholder="?" class="w-28 md:w-36 bg-slate-800 border-b-4 border-emerald-500 text-center text-amber-300 rounded-xl py-2 focus:outline-none focus:border-amber-400" onkeydown="if(event.key === 'Enter') checkLab()">
+                    <span class="text-emerald-400">mm</span>
+                </div>
+                <div id="lab-feedback" class="mt-3 min-h-[28px] text-sm font-bold"></div>
+            </div>
+
+            <div class="flex justify-between items-center gap-4 mt-4">
+                <button onclick="returnToMenu()" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition">⬅ Batal Misi</button>
+                <button onclick="checkLab()" class="flex-1 md:flex-none md:min-w-[200px] bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform active:scale-95 transition text-lg">
+                    Sahkan Ukuran! 📐
+                </button>
+            </div>
+        </section>
+
+        <!-- SKRIN 4: KEPUTUSAN -->
+        <section id="result-screen" class="hidden glass-panel rounded-3xl p-6 md:p-10 text-center shadow-2xl">
+            <div id="result-icon" class="text-6xl mb-3">🏆</div>
+            <h2 id="result-title" class="text-3xl font-bold text-amber-300 mb-1">Misi Berjaya!</h2>
+            <p id="player-info-display" class="text-sm text-indigo-300 mb-6"></p>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto mb-8">
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">Markah</span>
+                    <span id="final-fraction" class="text-2xl font-bold text-white">10 / 10</span>
+                </div>
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">Skor Tenaga</span>
+                    <span id="final-score" class="text-2xl font-bold text-emerald-400">1000</span>
+                </div>
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">Nombor Bulat (SP1)</span>
+                    <span id="sp1-score" class="text-lg font-bold text-cyan-300">-</span>
+                </div>
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">Perpuluhan (SP2)</span>
+                    <span id="sp2-score" class="text-lg font-bold text-purple-300">-</span>
+                </div>
+            </div>
+
+            <div class="max-w-2xl mx-auto bg-slate-900/90 rounded-2xl border border-slate-700 p-4 mb-6 text-left">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">Rekod Log Jawapan Kapten:</h3>
+                <div class="max-h-60 overflow-y-auto pr-1">
+                    <table class="w-full text-sm">
+                        <thead class="text-xs text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-2 px-2">No.</th>
+                                <th class="py-2 px-2">Soalan</th>
+                                <th class="py-2 px-2">Jawapan Anda</th>
+                                <th class="py-2 px-2">Jawapan Tepat</th>
+                                <th class="py-2 px-2 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="review-table-body" class="divide-y divide-slate-800/60"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Rekod Guru -->
+            <div class="max-w-2xl mx-auto bg-indigo-950/60 rounded-2xl border border-indigo-500/30 p-4 mb-8 text-left text-xs text-slate-300">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span>🗂️ <b>Rekod Kelas (peranti ini):</b> <span id="record-count">0</span> percubaan disimpan.</span>
+                    <div class="flex gap-2">
+                        <button onclick="downloadCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-semibold">📥 Muat Turun CSV</button>
+                        <button onclick="clearRecords()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg">🗑️ Kosongkan</button>
+                    </div>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-indigo-500/20 pt-3">
+                    <span>☁️ <b>Google Sheet:</b> <span id="sync-status" class="font-semibold">-</span></span>
+                    <button id="retry-sync" onclick="retrySync()" class="hidden bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg">🔁 Hantar Semula</button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4">
+                <button onclick="returnToMenu()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded-xl border border-slate-600 transition">🏠 Menu Utama</button>
+                <button onclick="replayCurrentMode()" class="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition">🔄 Main Semula Misi Ini</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="relative z-10 text-center text-xs text-slate-500 py-2">
+        Bahan Bantu Mengajar Digital • Matematik Tahun 5: Ukuran Panjang (SP 1 & SP 2) • Mod AR & Makmal Pembaris
+    </footer>
+
+    <!-- Paparan ralat pada skrin (untuk peranti yang tidak membenarkan F12) -->
+    <div id="err-banner" style="display:none; position:fixed; left:12px; right:12px; bottom:12px; z-index:9999; background:#7f1d1d; color:#fff; border:2px solid #fca5a5; border-radius:12px; padding:10px 14px; font:13px/1.4 monospace; white-space:pre-wrap; max-height:40vh; overflow:auto;"></div>
+    <script>
+        window.addEventListener('error', function (e) {
+            var b = document.getElementById('err-banner');
+            if (!b) return;
+            b.style.display = 'block';
+            b.textContent += '⚠️ RALAT: ' + (e.message || e) + (e.lineno ? '  (baris ' + e.lineno + ')' : '') + '\n';
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+            var b = document.getElementById('err-banner');
+            if (!b) return;
+            b.style.display = 'block';
+            b.textContent += '⚠️ RALAT: ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n';
+        });
+    </script>
+    <script>
+        // ╔══════════════════════════════════════════════════════════════════╗
+        // ║  TETAPAN GURU — tampal Web app URL Apps Script (berakhir /exec)  ║
+        // ║  di antara dua tanda petikan di bawah. Contoh:                   ║
+        // ║  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfy.../exec';
+        // ║  Biarkan kosong jika tidak mahu simpan ke Google Sheet.          ║
+        // ╚══════════════════════════════════════════════════════════════════╝
+        const SCRIPT_URL = '';
+
+        // ================== DATA ==================
+        const diagnosticQuestions = [
+            { qNum: 1, val: 5, from: 'cm', to: 'mm', ans: 50, part: 'BAHAGIAN A: NOMBOR BULAT', type: 'whole' },
+            { qNum: 2, val: 80, from: 'mm', to: 'cm', ans: 8, part: 'BAHAGIAN A: NOMBOR BULAT', type: 'whole' },
+            { qNum: 3, val: 12, from: 'cm', to: 'mm', ans: 120, part: 'BAHAGIAN A: NOMBOR BULAT', type: 'whole' },
+            { qNum: 4, val: 150, from: 'mm', to: 'cm', ans: 15, part: 'BAHAGIAN A: NOMBOR BULAT', type: 'whole' },
+            { qNum: 5, val: 250, from: 'mm', to: 'cm', ans: 25, part: 'BAHAGIAN A: NOMBOR BULAT', type: 'whole' },
+            { qNum: 6, val: 2.5, from: 'cm', to: 'mm', ans: 25, part: 'BAHAGIAN B: NOMBOR PERPULUHAN', type: 'decimal' },
+            { qNum: 7, val: 35, from: 'mm', to: 'cm', ans: 3.5, part: 'BAHAGIAN B: NOMBOR PERPULUHAN', type: 'decimal' },
+            { qNum: 8, val: 4.8, from: 'cm', to: 'mm', ans: 48, part: 'BAHAGIAN B: NOMBOR PERPULUHAN', type: 'decimal' },
+            { qNum: 9, val: 76, from: 'mm', to: 'cm', ans: 7.6, part: 'BAHAGIAN B: NOMBOR PERPULUHAN', type: 'decimal' },
+            { qNum: 10, val: 12.5, from: 'cm', to: 'mm', ans: 125, part: 'BAHAGIAN B: NOMBOR PERPULUHAN', type: 'decimal' }
+        ];
+
+        const labComponents = ['🔩 Bolt Enjin', '📡 Antena Radar', '⛽ Tiub Bahan Api', '🔋 Sel Tenaga', '🔌 Kabel Navigasi', '🪽 Sayap Mini', '🧲 Rod Magnet', '🛰️ Sensor Satelit'];
+        const arObjects = [
+            { name: 'PEMADAM', icon: '🧽' }, { name: 'PENSEL', icon: '✏️' }, { name: 'KRAYON', icon: '🖍️' },
+            { name: 'PENGASAH PENSEL', icon: '🔺' }, { name: 'PENUTUP PEN', icon: '🖊️' }, { name: 'BATANG GAM', icon: '🧴' },
+            { name: 'KLIP KERTAS', icon: '📎' }, { name: 'JARI KELINGKING ANDA', icon: '🤙' }, { name: 'LEBAR TELAPAK TANGAN ANDA', icon: '✋' },
+            { name: 'KUNCI / ANAK KUNCI', icon: '🔑' }
+        ];
+
+        // ================== STATUS ==================
+        let currentMode = 'diagnostic';
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0, streak = 0, lives = 3;
+        let userAnswersLog = [];
+        let isProcessing = false;
+
+        const r10 = x => Math.round(x * 100) / 100; // elak ralat titik terapung
+
+        // ================== AUDIO ==================
+        let audioCtx = null;
+        function playSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                const t = audioCtx.currentTime;
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    [523.25, 659.25, 783.99].forEach((f, i) => osc.frequency.setValueAtTime(f, t + i * 0.1));
+                    gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                    osc.start(); osc.stop(t + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, t); osc.frequency.setValueAtTime(150, t + 0.15);
+                    gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+                    osc.start(); osc.stop(t + 0.35);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    [440, 554.37, 659.25, 880].forEach((f, i) => osc.frequency.setValueAtTime(f, t + i * 0.12));
+                    gain.gain.setValueAtTime(0.25, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+                    osc.start(); osc.stop(t + 0.6);
+                }
+            } catch (e) { /* audio tidak disokong */ }
+        }
+
+        // ================== NAVIGASI ==================
+        function showScreen(id) {
+            ['start-screen', 'game-screen', 'lab-screen', 'result-screen'].forEach(s =>
+                document.getElementById(s).classList.toggle('hidden', s !== id));
+            document.getElementById('hud').classList.toggle('hidden', !(id === 'game-screen' || id === 'lab-screen'));
+        }
+
+        function resetStats() {
+            currentIndex = 0; score = 0; streak = 0; lives = 3;
+            userAnswersLog = []; isProcessing = false;
+        }
+
+        function startGame(mode) {
+            currentMode = mode;
+            resetStats();
+            if (mode === 'lab' || mode === 'ar') { startLab(mode); return; }
+
+            if (mode === 'diagnostic') {
+                questions = [...diagnosticQuestions];
+                document.getElementById('mission-title').textContent = '📋 MISI UJIAN DIAGNOSTIK';
+            } else if (mode === 'whole') {
+                questions = generatePracticeQuestions('whole', 10);
+                document.getElementById('mission-title').textContent = '🔢 LATIHAN: NOMBOR BULAT (SP 1)';
+            } else {
+                questions = generatePracticeQuestions('decimal', 10);
+                document.getElementById('mission-title').textContent = '🎯 LATIHAN: NOMBOR PERPULUHAN (SP 2)';
+            }
+            showScreen('game-screen');
+            applyAnswerModeUI();
+            if (answerMode === 'ar') startArCam(); else stopArCam();
+            updateHUD();
+            loadQuestion();
+        }
+
+        function returnToMenu() {
+            stopCamera();
+            showScreen('start-screen');
+        }
+
+        function replayCurrentMode() { startGame(currentMode); }
+
+        function updateHUD() {
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('streak-display').textContent = streak;
+            document.getElementById('lives-display').textContent = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+        }
+
+        function awardCorrect() {
+            playSound('correct');
+            streak++;
+            const bonus = streak >= 3 ? 50 : 0;
+            score += 100 + bonus;
+            return bonus;
+        }
+
+        // ================== MOD TUKAR UNIT ==================
+        function generatePracticeQuestions(type, count = 10) {
+            const list = [];
+            for (let i = 1; i <= count; i++) {
+                const isCmToMm = Math.random() > 0.5;
+                if (type === 'whole') {
+                    const cmVal = Math.floor(Math.random() * 35) + 2;
+                    list.push(isCmToMm
+                        ? { qNum: i, val: cmVal, from: 'cm', to: 'mm', ans: cmVal * 10, part: 'LATIHAN: NOMBOR BULAT', type: 'whole' }
+                        : { qNum: i, val: cmVal * 10, from: 'mm', to: 'cm', ans: cmVal, part: 'LATIHAN: NOMBOR BULAT', type: 'whole' });
+                } else {
+                    const mmVal = Math.floor(Math.random() * 190) + 11;
+                    const cleanMm = (mmVal % 10 === 0) ? mmVal + 5 : mmVal;
+                    const cmDecimal = parseFloat((cleanMm / 10).toFixed(1));
+                    list.push(isCmToMm
+                        ? { qNum: i, val: cmDecimal, from: 'cm', to: 'mm', ans: cleanMm, part: 'LATIHAN: PERPULUHAN', type: 'decimal' }
+                        : { qNum: i, val: cleanMm, from: 'mm', to: 'cm', ans: cmDecimal, part: 'LATIHAN: PERPULUHAN', type: 'decimal' });
+                }
+            }
+            return list;
+        }
+
+        function loadQuestion() {
+            isProcessing = false;
+            const q = questions[currentIndex];
+            document.getElementById('question-counter').textContent = `Soalan ${currentIndex + 1} / ${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+
+            const badge = document.getElementById('category-badge');
+            badge.textContent = q.part;
+            badge.className = q.type === 'whole'
+                ? 'inline-block bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-bold px-3 py-1 rounded-full'
+                : 'inline-block bg-purple-500/20 border border-purple-400/40 text-purple-200 text-xs font-bold px-3 py-1 rounded-full';
+
+            document.getElementById('q-value').textContent = q.val;
+            document.getElementById('q-from-unit').textContent = q.from;
+            document.getElementById('q-to-unit').textContent = q.to;
+
+            const input = document.getElementById('answer-input');
+            input.value = ''; input.disabled = false;
+            if (answerMode !== 'ar') input.focus();
+
+            document.getElementById('feedback-msg').textContent = '';
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('hint-btn-text').textContent = 'Buka Radar Bantuan (Nota)';
+            updateHintContent(q);
+            if (answerMode === 'ar') renderArOptions(q);
+        }
+
+        function updateHintContent(q) {
+            const hintExp = document.getElementById('hint-explanation');
+            const toMm = q.from === 'cm';
+            hintExp.innerHTML = toMm ? `
+                <p class="font-bold text-cyan-300">Petunjuk Pertukaran (cm ➔ mm):</p>
+                <p>Untuk menukar unit besar (<b>cm</b>) kepada unit kecil (<b>mm</b>), kita perlu <b>DARAB 10</b>.</p>
+                <p class="text-amber-300 font-mono text-xs mt-1">💡 Tip Pantas: Gerakkan titik perpuluhan 1 langkah ke KANAN (atau tambah satu sifar bagi nombor bulat).</p>
+                <p class="text-xs text-slate-400">Kiraan: ${q.val} × 10 = ?</p>` : `
+                <p class="font-bold text-purple-300">Petunjuk Pertukaran (mm ➔ cm):</p>
+                <p>Untuk menukar unit kecil (<b>mm</b>) kepada unit besar (<b>cm</b>), kita perlu <b>BAHAGI 10</b>.</p>
+                <p class="text-amber-300 font-mono text-xs mt-1">💡 Tip Pantas: Gerakkan titik perpuluhan 1 langkah ke KIRI (atau buang satu sifar di hujung).</p>
+                <p class="text-xs text-slate-400">Kiraan: ${q.val} ÷ 10 = ?</p>`;
+
+            // Jadual nilai tempat (tanpa mendedahkan jawapan)
+            const [ip, dp] = String(q.val).split('.');
+            const padded = ip.padStart(3, ' ');
+            const cells = [
+                ['Ratus', padded[0]], ['Puluh', padded[1]], ['Sa', padded[2]], ['•', '.'], ['Persepuluh', dp ? dp[0] : '0']
+            ];
+            document.getElementById('hint-placevalue').innerHTML = `
+                <p class="text-xs font-bold text-amber-300 mb-2">🧮 Jadual Nilai Tempat: ${q.val} ${q.from}</p>
+                <div class="flex gap-1 justify-center">
+                    ${cells.map(([h, d]) => `
+                        <div class="pv-cell text-center ${h === '•' ? 'text-rose-400' : ''}">
+                            <div class="text-[9px] text-slate-400">${h === '•' ? '&nbsp;' : h}</div>
+                            <div class="text-xl font-bold ${h === '•' ? 'text-rose-400' : 'text-white'} bg-slate-900 rounded py-1">${d.trim() || '&nbsp;'}</div>
+                        </div>`).join('')}
+                </div>
+                <p class="text-center text-xs mt-2 ${toMm ? 'text-cyan-300' : 'text-purple-300'} font-bold">
+                    ${toMm ? 'Titik perpuluhan bergerak 1 langkah ➡️ KANAN' : '⬅️ Titik perpuluhan bergerak 1 langkah KIRI'}
+                </p>`;
+        }
+
+        function drawHintRuler() {
+            const c = document.getElementById('hint-ruler');
+            const w = c.clientWidth || 300, h = 44, dpr = window.devicePixelRatio || 1;
+            c.width = w * dpr; c.height = h * dpr;
+            const ctx = c.getContext('2d'); ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, w, h);
+            const pad = 10, cms = 3, ppc = (w - pad * 2) / cms;
+            ctx.strokeStyle = '#1e293b'; ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 10px Fredoka, sans-serif'; ctx.textAlign = 'center';
+            for (let mm = 0; mm <= cms * 10; mm++) {
+                const x = pad + mm * ppc / 10;
+                const len = mm % 10 === 0 ? 20 : (mm % 5 === 0 ? 14 : 9);
+                ctx.lineWidth = mm % 10 === 0 ? 2 : 1;
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, len); ctx.stroke();
+                if (mm % 10 === 0) ctx.fillText(`${mm / 10} cm (${mm} mm)`, x === pad ? x + 22 : (mm === cms * 10 ? x - 30 : x), 34);
+            }
+        }
+
+        function toggleHint() {
+            const box = document.getElementById('hint-box');
+            const open = box.classList.contains('hidden');
+            box.classList.toggle('hidden', !open);
+            document.getElementById('hint-btn-text').textContent = open ? 'Tutup Radar Bantuan' : 'Buka Radar Bantuan (Nota)';
+            if (open) drawHintRuler();
+        }
+
+        function checkAnswer() {
+            if (isProcessing) return;
+            const input = document.getElementById('answer-input');
+            const rawVal = input.value.trim();
+            const feedback = document.getElementById('feedback-msg');
+
+            if (rawVal === '') {
+                feedback.textContent = '⚠️ Sila masukkan nilai jawapan terlebih dahulu, Kapten!';
+                feedback.className = 'mt-4 min-h-[28px] text-sm font-bold text-amber-400';
+                return;
+            }
+            isProcessing = true; input.disabled = true;
+
+            const q = questions[currentIndex];
+            const isCorrect = Math.abs(parseFloat(rawVal) - q.ans) < 0.0001;
+            userAnswersLog.push({ qNum: q.qNum, questionText: `${q.val} ${q.from} = ___ ${q.to}`, userAns: rawVal, correctAns: q.ans, unit: q.to, isCorrect, type: q.type });
+
+            if (isCorrect) {
+                const bonus = awardCorrect();
+                feedback.innerHTML = `✅ Tepat sekali! Komponen berjaya dipasang! ${bonus ? '<span class="text-amber-300">(+50 Bonus Kombo!)</span>' : ''}`;
+                feedback.className = 'mt-4 min-h-[28px] text-sm font-bold text-emerald-400';
+            } else {
+                playSound('wrong'); streak = 0;
+                if (lives > 1 && currentMode !== 'diagnostic') lives--;
+                const opText = q.from === 'cm' ? `${q.val} × 10 = ${q.ans}` : `${q.val} ÷ 10 = ${q.ans}`;
+                feedback.innerHTML = `❌ Kurang tepat. Jawapan sebenar ialah <b>${q.ans} ${q.to}</b> (${opText}).`;
+                feedback.className = 'mt-4 min-h-[28px] text-sm font-bold text-rose-400';
+            }
+            updateHUD();
+            setTimeout(() => {
+                currentIndex++;
+                currentIndex < questions.length ? loadQuestion() : endGame();
+            }, 1600);
+        }
+
+        // ================== PILIH JAWAPAN AR ==================
+        let answerMode = 'type';
+        try { answerMode = localStorage.getItem('misiAngkasaAnsMode') === 'ar' ? 'ar' : 'type'; } catch (e) {}
+        const arState = { stream: null, hand: false, landmarker: null, loading: false, raf: 0, lastVideoTime: -1, hotEl: null, hotStart: 0 };
+        const DWELL_MS = 1000; // tempoh jari perlu kekal pada gelembung
+        const bubbleColors = [
+            'radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), #06b6d4 45%, #155e75)',
+            'radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), #a855f7 45%, #581c87)',
+            'radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), #f59e0b 45%, #92400e)',
+            'radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), #10b981 45%, #065f46)'
+        ];
+
+        function setAnswerMode(m) {
+            answerMode = m;
+            try { localStorage.setItem('misiAngkasaAnsMode', m); } catch (e) {}
+            document.getElementById('ans-type').classList.toggle('active', m === 'type');
+            document.getElementById('ans-ar').classList.toggle('active', m === 'ar');
+            document.getElementById('ans-mode-note').textContent = m === 'ar'
+                ? 'Empat gelembung jawapan terapung di atas kamera. Murid ketik gelembung, atau tuding dengan jari telunjuk selama 1 saat.'
+                : 'Murid menaip jawapan dalam kotak.';
+        }
+
+        function applyAnswerModeUI() {
+            const ar = answerMode === 'ar';
+            document.getElementById('answer-input').classList.toggle('hidden', ar);
+            document.getElementById('q-blank').classList.toggle('hidden', !ar);
+            document.getElementById('submit-btn').classList.toggle('invisible', ar);
+            document.getElementById('ar-answer-wrap').classList.toggle('hidden', !ar);
+        }
+
+        const fmt = x => Number(Number(x).toFixed(2));
+
+        // Pilihan jawapan: 1 betul + 3 pengganggu berdasarkan miskonsepsi biasa
+        function makeOptions(q) {
+            const a = fmt(q.ans), v = q.val;
+            const misconceptions = q.from === 'cm'
+                ? [v / 10, v * 100, v]            // operasi terbalik, darab 100, tidak ditukar
+                : [v * 10, v / 100, v];
+            const extras = q.from === 'cm' ? [a + 10, a - 10, a + 1, a - 1, a * 10] : [a + 1, a - 1, a * 10, a + 0.5, a / 10];
+            const opts = [a];
+            [...misconceptions.slice(0, 2), ...shuffle([misconceptions[2], ...extras])].forEach(x => {
+                const f = fmt(x);
+                if (opts.length < 4 && f > 0 && !opts.includes(f)) opts.push(f);
+            });
+            return shuffle(opts);
+        }
+
+        function renderArOptions(q) {
+            const box = document.getElementById('ar-bubbles');
+            box.innerHTML = '';
+            const slots = shuffle([[24, 30], [76, 30], [24, 70], [76, 70]]);
+            makeOptions(q).forEach((val, i) => {
+                const b = document.createElement('div');
+                b.className = 'ar-bubble';
+                b.dataset.val = val;
+                b.style.left = (slots[i][0] + (Math.random() * 6 - 3)) + '%';
+                b.style.top = (slots[i][1] + (Math.random() * 6 - 3)) + '%';
+                b.style.background = bubbleColors[i];
+                b.style.animationDelay = (i * 0.4) + 's';
+                b.innerHTML = `${val}<small>${q.to}</small>`;
+                b.addEventListener('click', () => selectArAnswer(b));
+                box.appendChild(b);
+            });
+        }
+
+        function selectArAnswer(el) {
+            if (isProcessing || answerMode !== 'ar') return;
+            const q = questions[currentIndex];
+            document.getElementById('answer-input').value = el.dataset.val;
+            const correct = Math.abs(parseFloat(el.dataset.val) - q.ans) < 0.0001;
+            document.querySelectorAll('#ar-bubbles .ar-bubble').forEach(b => {
+                if (Math.abs(parseFloat(b.dataset.val) - q.ans) < 0.0001) b.classList.add('correct');
+                else if (b === el) b.classList.add('wrong');
+                else b.classList.add('dim');
+                b.style.setProperty('--p', 0);
+            });
+            document.getElementById('q-blank').textContent = el.dataset.val;
+            checkAnswer();
+            setTimeout(() => { document.getElementById('q-blank').textContent = '?'; }, correct ? 1500 : 1550);
+        }
+
+        function setArStatus(t) { document.getElementById('ar-status').textContent = t; }
+
+        async function startArCam() {
+            const video = document.getElementById('ar-cam');
+            if (arState.stream) return;
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setArStatus('📷 Kamera tidak disokong — ketik gelembung untuk menjawab');
+                return;
+            }
+            try {
+                setArStatus('Memulakan kamera…');
+                arState.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+                video.srcObject = arState.stream;
+                video.classList.remove('hidden');
+                document.getElementById('ar-stage').classList.remove('grid-bg');
+                setArStatus(arState.hand ? '🖐️ Kawalan tangan: HIDUP' : '📷 Kamera aktif — ketik gelembung, atau hidupkan kawalan tangan');
+            } catch (err) {
+                setArStatus('📷 Kamera tidak dapat dibuka — benarkan kamera (ikon 🔒 di bar alamat) atau ketik gelembung');
+            }
+        }
+
+        function stopArCam() {
+            if (arState.stream) { arState.stream.getTracks().forEach(t => t.stop()); arState.stream = null; }
+            const video = document.getElementById('ar-cam');
+            video.srcObject = null; video.classList.add('hidden');
+            document.getElementById('ar-stage').classList.add('grid-bg');
+            cancelAnimationFrame(arState.raf); arState.raf = 0;
+            arState.hand = false;
+            document.getElementById('hand-btn').textContent = '🖐️ Hidupkan Kawalan Tangan';
+            clearHandCanvas();
+        }
+
+        async function toggleHandControl() {
+            const btn = document.getElementById('hand-btn');
+            if (arState.hand) {
+                arState.hand = false;
+                cancelAnimationFrame(arState.raf); arState.raf = 0;
+                clearHandCanvas();
+                btn.textContent = '🖐️ Hidupkan Kawalan Tangan';
+                setArStatus('📷 Kawalan tangan dimatikan — ketik gelembung');
+                return;
+            }
+            if (!arState.stream) await startArCam();
+            if (!arState.stream) return;
+            if (!arState.landmarker) {
+                if (arState.loading) return;
+                arState.loading = true;
+                setArStatus('⏳ Memuatkan model pengesan tangan… (kali pertama ambil masa)');
+                try {
+                    const base = 'https:\/\/cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+                    const vision = await loadVisionModule(base);
+                    const fileset = await vision.FilesetResolver.forVisionTasks(base + '/wasm');
+                    const opts = (delegate) => ({
+                        baseOptions: { modelAssetPath: 'https:\/\/storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate },
+                        runningMode: 'VIDEO', numHands: 1
+                    });
+                    try { arState.landmarker = await vision.HandLandmarker.createFromOptions(fileset, opts('GPU')); }
+                    catch (e) { arState.landmarker = await vision.HandLandmarker.createFromOptions(fileset, opts('CPU')); }
+                } catch (err) {
+                    arState.loading = false;
+                    setArStatus('⚠️ Pengesan tangan gagal dimuatkan (semak internet) — ketik gelembung');
+                    return;
+                }
+                arState.loading = false;
+            }
+            arState.hand = true;
+            btn.textContent = '✋ Matikan Kawalan Tangan';
+            setArStatus('🖐️ Kawalan tangan: HIDUP — tuding jari telunjuk ke gelembung');
+            arState.lastVideoTime = -1;
+            arState.raf = requestAnimationFrame(handLoop);
+        }
+
+        // Muatkan MediaPipe melalui <script type="module"> berasingan (lebih serasi dengan Apps Script)
+        function loadVisionModule(base) {
+            return new Promise((resolve, reject) => {
+                if (window.__mpVision) return resolve(window.__mpVision);
+                window.__mpVisionReady = resolve;
+                const s = document.createElement('script');
+                s.type = 'module';
+                s.textContent = "import * as v from '" + base + "/vision_bundle.mjs'; window.__mpVision = v; window.__mpVisionReady(v);";
+                document.head.appendChild(s);
+                setTimeout(() => { if (!window.__mpVision) reject(new Error('Masa tamat memuatkan pengesan tangan')); }, 30000);
+            });
+        }
+
+        function clearHandCanvas() {
+            const c = document.getElementById('ar-hand');
+            c.getContext('2d').clearRect(0, 0, c.width, c.height);
+            if (arState.hotEl) { arState.hotEl.classList.remove('hot'); arState.hotEl.style.setProperty('--p', 0); arState.hotEl = null; }
+        }
+
+        function handLoop() {
+            if (!arState.hand) return;
+            arState.raf = requestAnimationFrame(handLoop);
+            const video = document.getElementById('ar-cam');
+            const stage = document.getElementById('ar-stage');
+            const canvas = document.getElementById('ar-hand');
+            if (stage.offsetParent === null || video.readyState < 2 || !arState.landmarker) return;
+            if (video.currentTime === arState.lastVideoTime) return;
+            arState.lastVideoTime = video.currentTime;
+
+            const W = stage.clientWidth, H = stage.clientHeight, dpr = window.devicePixelRatio || 1;
+            if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) {
+                canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+            }
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, H);
+
+            let res;
+            try { res = arState.landmarker.detectForVideo(video, performance.now()); } catch (e) { return; }
+            if (!res || !res.landmarks || !res.landmarks.length) { setHot(null); return; }
+
+            // Petakan koordinat video (object-cover + cermin) ke koordinat pentas
+            const vw = video.videoWidth, vh = video.videoHeight;
+            const s = Math.max(W / vw, H / vh), dw = vw * s, dh = vh * s;
+            const ox = (W - dw) / 2, oy = (H - dh) / 2;
+            const toStage = p => ({ x: ox + (1 - p.x) * dw, y: oy + p.y * dh });
+
+            const lm = res.landmarks[0];
+            // Lukis rangka tangan ringkas
+            ctx.strokeStyle = 'rgba(240,171,252,0.8)'; ctx.lineWidth = 2;
+            [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]].forEach(chain => {
+                ctx.beginPath();
+                chain.forEach((idx, k) => { const p = toStage(lm[idx]); k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
+                ctx.stroke();
+            });
+            const tip = toStage(lm[8]);
+            ctx.beginPath(); ctx.arc(tip.x, tip.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(253,224,71,0.9)'; ctx.fill();
+            ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+
+            if (isProcessing) { setHot(null); return; }
+            const sr = stage.getBoundingClientRect();
+            let hit = null;
+            document.querySelectorAll('#ar-bubbles .ar-bubble').forEach(b => {
+                const r = b.getBoundingClientRect();
+                const cx = r.left - sr.left + r.width / 2, cy = r.top - sr.top + r.height / 2;
+                if (Math.hypot(tip.x - cx, tip.y - cy) < r.width / 2 + 6) hit = b;
+            });
+            setHot(hit);
+            if (hit) {
+                const p = Math.min(100, (performance.now() - arState.hotStart) / DWELL_MS * 100);
+                hit.style.setProperty('--p', p);
+                if (p >= 100) { setHot(null); selectArAnswer(hit); }
+            }
+        }
+
+        function setHot(el) {
+            if (arState.hotEl === el) return;
+            if (arState.hotEl) { arState.hotEl.classList.remove('hot'); arState.hotEl.style.setProperty('--p', 0); }
+            arState.hotEl = el;
+            if (el) { el.classList.add('hot'); arState.hotStart = performance.now(); }
+        }
+
+        // ================== MAKMAL PEMBARIS & AR ==================
+        const RULER_H = 58, RULER_PAD = 14;
+        let lab = { tasks: [], ppc: 40, len: 15, ox: 40, oy: 120, angle: 0, markerCm: 0, showReadout: false, stream: null };
+        let drag = null;
+
+        const stage = document.getElementById('stage');
+        const ruler = document.getElementById('ruler');
+        const rulerCanvas = document.getElementById('ruler-canvas');
+        const marker = document.getElementById('marker');
+
+        function shuffle(a) { return a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(v => v[1]); }
+
+        function startLab(mode) {
+            showScreen('lab-screen');
+            updateHUD();
+            const isAR = mode === 'ar';
+            document.getElementById('lab-title').textContent = isAR ? '📷 MISI PEMBARIS AR' : '📏 MAKMAL PEMBARIS MAYA';
+            document.getElementById('calib-wrap').classList.toggle('hidden', !isAR);
+            document.getElementById('cam').classList.toggle('hidden', !isAR);
+            stage.classList.toggle('grid-bg', !isAR);
+
+            if (isAR) {
+                lab.len = 20;
+                let saved = 38;
+                try { saved = parseInt(localStorage.getItem('misiAngkasaPPC')) || 38; } catch (e) {}
+                lab.ppc = saved;
+                document.getElementById('calib-slider').value = saved;
+                document.getElementById('calib-val').textContent = `${saved} px/cm`;
+                lab.tasks = shuffle(arObjects).slice(0, 5).map((o, i) => ({ qNum: i + 1, ...o }));
+                startCamera();
+            } else {
+                lab.len = 15;
+                computeLabPPC();
+                const names = shuffle(labComponents);
+                const lens = [];
+                // Campuran nombor bulat & perpuluhan (2 bulat, 3 perpuluhan)
+                for (let i = 0; i < 5; i++) {
+                    let L;
+                    do {
+                        L = (Math.floor(Math.random() * 100) + 20) / 10; // 2.0 – 11.9 cm
+                        if (i < 2) L = Math.round(L);
+                        else if (Number.isInteger(L)) L = L + 0.5;
+                    } while (lens.includes(L));
+                    lens.push(L);
+                }
+                lab.tasks = shuffle(lens).map((L, i) => ({ qNum: i + 1, name: names[i], len: L }));
+            }
+            loadLabTask();
+        }
+
+        function computeLabPPC() {
+            const w = stage.clientWidth || 600;
+            lab.ppc = Math.max(18, Math.min(55, Math.floor((w - 40) / (lab.len + 1))));
+        }
+
+        function loadLabTask() {
+            isProcessing = false;
+            const t = lab.tasks[currentIndex];
+            const isAR = currentMode === 'ar';
+            document.getElementById('lab-counter').textContent = `Tugasan ${currentIndex + 1} / ${lab.tasks.length}`;
+            document.getElementById('lab-progress').style.width = `${((currentIndex + 1) / lab.tasks.length) * 100}%`;
+            document.getElementById('lab-feedback').textContent = '';
+            const cmIn = document.getElementById('lab-cm'), mmIn = document.getElementById('lab-mm');
+            cmIn.value = ''; mmIn.value = ''; cmIn.disabled = false; mmIn.disabled = false;
+
+            const missionEl = document.getElementById('lab-mission');
+            if (isAR) {
+                missionEl.innerHTML = `
+                    <p class="text-amber-300 font-bold text-base mb-1">🎯 Tugasan ${t.qNum}: Ukur ${t.icon} ${t.name}</p>
+                    <ol class="list-decimal ml-5 space-y-0.5 text-slate-300 text-xs">
+                        ${t.qNum === 1 ? '<li><b class="text-rose-300">Kalibrasi dahulu:</b> letak pembaris sebenar di hadapan kamera, laraskan slider <b>Kalibrasi Saiz</b> sehingga 1 cm pembaris AR sama dengan 1 cm pembaris sebenar.</li>' : ''}
+                        <li>Letak objek di hadapan kamera <b>pada jarak yang sama</b> seperti semasa kalibrasi.</li>
+                        <li>Seret pembaris supaya <b>0</b> berada di hujung objek. Putar jika perlu.</li>
+                        <li>Seret penanda ◆ merah ke hujung satu lagi. Baca panjang dalam <b>cm</b>, kemudian tukar ke <b>mm</b>.</li>
+                    </ol>`;
+                document.getElementById('lab-object').classList.add('hidden');
+                document.getElementById('lab-object-label').classList.add('hidden');
+                lab.ox = 30; lab.oy = Math.max(60, stage.clientHeight / 2 - 20);
+            } else {
+                missionEl.innerHTML = `
+                    <p class="text-amber-300 font-bold text-base mb-1">🛠️ Tugasan ${t.qNum}: Ukur komponen ${t.name}</p>
+                    <p class="text-slate-300 text-xs">Seret pembaris ke bawah komponen dan jajarkan <b>0</b> dengan hujung kiri. Seret penanda ◆ ke hujung kanan. Tulis panjang dalam <b>cm</b>, kemudian tukar ke <b>mm</b>.</p>`;
+                computeLabPPC();
+                placeLabObject(t);
+                lab.ox = 30; lab.oy = Math.min(stage.clientHeight - RULER_H - 50, 150);
+            }
+            lab.angle = 0; lab.markerCm = 0;
+            document.getElementById('rot-slider').value = 0;
+            document.getElementById('rot-val').textContent = '0°';
+            drawRuler(); positionRuler();
+        }
+
+        function placeLabObject(t) {
+            const obj = document.getElementById('lab-object');
+            const label = document.getElementById('lab-object-label');
+            const w = t.len * lab.ppc;
+            const maxLeft = Math.max(20, stage.clientWidth - w - 20);
+            const left = 20 + Math.random() * (maxLeft - 20);
+            const top = 50;
+            obj.style.width = w + 'px'; obj.style.left = left + 'px'; obj.style.top = top + 'px';
+            obj.textContent = '';
+            label.textContent = t.name;
+            label.style.left = left + 'px'; label.style.top = (top - 20) + 'px';
+            obj.classList.remove('hidden'); label.classList.remove('hidden');
+            t._left = left;
+        }
+
+        function drawRuler() {
+            const dpr = window.devicePixelRatio || 1;
+            const W = lab.len * lab.ppc + RULER_PAD * 2;
+            rulerCanvas.style.width = W + 'px'; rulerCanvas.style.height = RULER_H + 'px';
+            rulerCanvas.width = W * dpr; rulerCanvas.height = RULER_H * dpr;
+            ruler.style.width = W + 'px'; ruler.style.height = RULER_H + 'px';
+            const ctx = rulerCanvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, RULER_H);
+            ctx.fillStyle = currentMode === 'ar' ? 'rgba(253, 230, 138, 0.78)' : 'rgba(253, 230, 138, 0.95)';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(0, 0, W, RULER_H, 6); else ctx.rect(0, 0, W, RULER_H);
+            ctx.fill();
+            ctx.strokeStyle = '#0f172a'; ctx.fillStyle = '#0f172a';
+            ctx.font = `bold ${lab.ppc >= 26 ? 12 : 10}px Fredoka, sans-serif`;
+            ctx.textAlign = 'center';
+            const labelEvery = lab.ppc >= 22 ? 1 : 2;
+            for (let mm = 0; mm <= lab.len * 10; mm++) {
+                const x = RULER_PAD + mm * lab.ppc / 10;
+                const len = mm % 10 === 0 ? 24 : (mm % 5 === 0 ? 16 : 9);
+                ctx.lineWidth = mm % 10 === 0 ? 1.6 : 0.8;
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, len); ctx.stroke();
+                const cm = mm / 10;
+                if (mm % 10 === 0 && cm % labelEvery === 0) ctx.fillText(cm, x, 40);
+            }
+            ctx.font = 'bold 9px Fredoka, sans-serif'; ctx.textAlign = 'right';
+            ctx.fillText('cm', W - 6, RULER_H - 6);
+        }
+
+        function positionRuler() {
+            ruler.style.left = (lab.ox - RULER_PAD) + 'px';
+            ruler.style.top = lab.oy + 'px';
+            ruler.style.transformOrigin = `${RULER_PAD}px 0px`;
+            ruler.style.transform = `rotate(${lab.angle}deg)`;
+            marker.style.left = (RULER_PAD + lab.markerCm * lab.ppc) + 'px';
+            const ro = document.getElementById('marker-readout');
+            ro.textContent = `Penanda: ${lab.markerCm.toFixed(1)} cm`;
+            ro.classList.toggle('hidden', !lab.showReadout);
+        }
+
+        function stagePoint(e) {
+            const r = stage.getBoundingClientRect();
+            return { x: e.clientX - r.left, y: e.clientY - r.top };
+        }
+
+        function pointToCm(p) {
+            const th = lab.angle * Math.PI / 180;
+            const dx = p.x - lab.ox, dy = p.y - lab.oy;
+            const local = dx * Math.cos(th) + dy * Math.sin(th);
+            const cm = Math.round((local / lab.ppc) * 10) / 10;
+            return Math.max(0, Math.min(lab.len, cm));
+        }
+
+        ruler.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            ruler.setPointerCapture(e.pointerId);
+            const p = stagePoint(e);
+            drag = { mode: e.target.closest('#marker') ? 'marker' : 'ruler', last: p, start: p, moved: 0 };
+        });
+        ruler.addEventListener('pointermove', e => {
+            if (!drag) return;
+            const p = stagePoint(e);
+            drag.moved += Math.abs(p.x - drag.last.x) + Math.abs(p.y - drag.last.y);
+            if (drag.mode === 'ruler') {
+                lab.ox += p.x - drag.last.x; lab.oy += p.y - drag.last.y;
+                lab.ox = Math.max(-lab.len * lab.ppc + 40, Math.min(stage.clientWidth - 20, lab.ox));
+                lab.oy = Math.max(-20, Math.min(stage.clientHeight - 20, lab.oy));
+            } else {
+                lab.markerCm = pointToCm(p);
+            }
+            drag.last = p;
+            positionRuler();
+        });
+        ruler.addEventListener('pointerup', e => {
+            if (drag && drag.mode === 'ruler' && drag.moved < 6) {
+                lab.markerCm = pointToCm(stagePoint(e)); // ketik untuk alih penanda
+                positionRuler();
+            }
+            drag = null;
+        });
+        ruler.addEventListener('pointercancel', () => { drag = null; });
+
+        document.getElementById('rot-slider').addEventListener('input', e => {
+            lab.angle = parseInt(e.target.value);
+            document.getElementById('rot-val').textContent = `${lab.angle}°`;
+            positionRuler();
+        });
+        document.getElementById('calib-slider').addEventListener('input', e => {
+            lab.ppc = parseInt(e.target.value);
+            document.getElementById('calib-val').textContent = `${lab.ppc} px/cm`;
+            try { localStorage.setItem('misiAngkasaPPC', lab.ppc); } catch (err) {}
+            drawRuler(); positionRuler();
+        });
+
+        function resetRuler() {
+            lab.ox = 30; lab.oy = Math.min(stage.clientHeight - RULER_H - 50, 150);
+            lab.angle = 0; lab.markerCm = 0;
+            document.getElementById('rot-slider').value = 0;
+            document.getElementById('rot-val').textContent = '0°';
+            positionRuler();
+        }
+
+        function toggleReadout() {
+            lab.showReadout = !lab.showReadout;
+            document.getElementById('readout-btn').textContent = lab.showReadout ? 'Sorok Bacaan' : 'Tunjuk Bacaan';
+            positionRuler();
+        }
+
+        window.addEventListener('resize', () => {
+            if (document.getElementById('lab-screen').classList.contains('hidden') || currentMode !== 'lab') return;
+            const t = lab.tasks[currentIndex];
+            computeLabPPC(); placeLabObject(t); drawRuler(); positionRuler();
+        });
+
+        // ---- Kamera ----
+        async function startCamera() {
+            const msg = document.getElementById('cam-msg');
+            const video = document.getElementById('cam');
+            msg.classList.add('hidden'); msg.classList.remove('flex');
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showCamError('Peranti atau pelayar ini tidak menyokong kamera.');
+                return;
+            }
+            try {
+                lab.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+                video.srcObject = lab.stream;
+            } catch (err) {
+                showCamError('Akses kamera ditolak atau tiada kamera dikesan.');
+            }
+        }
+
+        function showCamError(text) {
+            const msg = document.getElementById('cam-msg');
+            msg.innerHTML = `
+                <div class="text-5xl mb-3">📷</div>
+                <p class="font-bold text-rose-300 mb-1">${text}</p>
+                <p class="text-xs text-slate-400 mb-4">Benarkan akses kamera pada pelayar (ikon 🔒 di bar alamat → Camera → Allow), kemudian klik Cuba Lagi. Jika peranti tiada kamera, gunakan tablet atau telefon.</p>
+                <div class="flex gap-2 flex-wrap justify-center">
+                    <button onclick="startCamera()" class="bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-lg text-sm font-bold">🔁 Cuba Lagi</button>
+                    <button onclick="startGame('lab')" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-sm font-bold">📏 Tukar ke Makmal Maya</button>
+                </div>`;
+            msg.classList.remove('hidden'); msg.classList.add('flex');
+        }
+
+        function stopCamera() {
+            if (lab.stream) { lab.stream.getTracks().forEach(t => t.stop()); lab.stream = null; }
+            document.getElementById('cam').srcObject = null;
+            stopArCam();
+        }
+
+        // ---- Semak Jawapan Makmal/AR ----
+        function checkLab() {
+            if (isProcessing) return;
+            const fb = document.getElementById('lab-feedback');
+            const cmRaw = document.getElementById('lab-cm').value.trim();
+            const mmRaw = document.getElementById('lab-mm').value.trim();
+            const warn = txt => { fb.innerHTML = txt; fb.className = 'mt-3 min-h-[28px] text-sm font-bold text-amber-400'; };
+
+            if (cmRaw === '' || mmRaw === '') { warn('⚠️ Isikan kedua-dua bacaan cm dan jawapan mm, Kapten!'); return; }
+            const cm = parseFloat(cmRaw), mm = parseFloat(mmRaw);
+            const t = lab.tasks[currentIndex];
+            const isAR = currentMode === 'ar';
+
+            let isCorrect, msg, correctMm, qText, refCm;
+            const convOK = Math.abs(mm - r10(cm * 10)) < 0.01;
+
+            if (isAR) {
+                if (lab.markerCm === 0) { warn('⚠️ Gunakan penanda ◆ merah untuk mengukur objek dahulu.'); return; }
+                refCm = lab.markerCm;
+                const readOK = Math.abs(cm - refCm) <= 0.1001;
+                isCorrect = convOK && readOK;
+                correctMm = r10(cm * 10);
+                qText = `${t.icon} ${t.name}: ${cm} cm = ___ mm`;
+                if (isCorrect) msg = `✅ Hebat! ${t.name} = <b>${cm} cm = ${correctMm} mm</b>`;
+                else if (!readOK && convOK) msg = `❌ Pertukaran betul, tetapi bacaan tidak sepadan dengan penanda (${refCm.toFixed(1)} cm). Semak semula senggatan pembaris.`;
+                else if (readOK && !convOK) msg = `❌ Bacaan betul! Tetapi tukar ke mm: ${cm} × 10 = <b>${correctMm} mm</b>.`;
+                else msg = `❌ Penanda menunjukkan ${refCm.toFixed(1)} cm, jadi ${refCm.toFixed(1)} × 10 = <b>${r10(refCm * 10)} mm</b>.`;
+            } else {
+                refCm = t.len;
+                const readOK = Math.abs(cm - refCm) < 0.051;
+                isCorrect = readOK && convOK;
+                correctMm = r10(refCm * 10);
+                qText = `${t.name}: ${refCm} cm = ___ mm`;
+                if (isCorrect) msg = `✅ Tepat! ${t.name} = <b>${refCm} cm = ${correctMm} mm</b>. Komponen dipasang!`;
+                else if (!readOK && convOK) msg = `❌ Pertukaran anda betul, tetapi panjang sebenar ialah <b>${refCm} cm</b> = ${correctMm} mm. Pastikan 0 dijajarkan dengan hujung komponen.`;
+                else if (readOK && !convOK) msg = `❌ Bacaan pembaris betul! Tetapi ${refCm} × 10 = <b>${correctMm} mm</b>.`;
+                else msg = `❌ Panjang sebenar ialah <b>${refCm} cm</b>, iaitu ${refCm} × 10 = <b>${correctMm} mm</b>.`;
+            }
+
+            isProcessing = true;
+            document.getElementById('lab-cm').disabled = true;
+            document.getElementById('lab-mm').disabled = true;
+
+            const type = Math.round(refCm * 10) % 10 === 0 ? 'whole' : 'decimal';
+            userAnswersLog.push({ qNum: t.qNum, questionText: qText, userAns: `${cmRaw} cm → ${mmRaw}`, correctAns: correctMm, unit: 'mm', isCorrect, type });
+
+            if (isCorrect) {
+                const bonus = awardCorrect();
+                fb.innerHTML = msg + (bonus ? ' <span class="text-amber-300">(+50 Bonus Kombo!)</span>' : '');
+                fb.className = 'mt-3 min-h-[28px] text-sm font-bold text-emerald-400';
+            } else {
+                playSound('wrong'); streak = 0;
+                fb.innerHTML = msg;
+                fb.className = 'mt-3 min-h-[28px] text-sm font-bold text-rose-400';
+            }
+            updateHUD();
+            setTimeout(() => {
+                currentIndex++;
+                currentIndex < lab.tasks.length ? loadLabTask() : endGame();
+            }, isCorrect ? 1800 : 3200);
+        }
+
+        // ================== KEPUTUSAN ==================
+        const modeNames = { diagnostic: 'Diagnostik', whole: 'Nombor Bulat', decimal: 'Perpuluhan', lab: 'Makmal Pembaris', ar: 'Pembaris AR' };
+
+        function endGame() {
+            stopCamera();
+            playSound('win');
+            showScreen('result-screen');
+
+            const name = document.getElementById('player-name').value.trim() || 'Kapten Tanpa Nama';
+            const cls = document.getElementById('player-class').value.trim() || 'Tahun 5';
+            document.getElementById('player-info-display').textContent = `Kapten: ${name} | Skuadron: ${cls} | Misi: ${modeNames[currentMode]}`;
+
+            const total = userAnswersLog.length;
+            const totalCorrect = userAnswersLog.filter(a => a.isCorrect).length;
+            document.getElementById('final-fraction').textContent = `${totalCorrect} / ${total}`;
+            document.getElementById('final-score').textContent = score;
+
+            const sp1 = userAnswersLog.filter(a => a.type === 'whole');
+            const sp2 = userAnswersLog.filter(a => a.type === 'decimal');
+            const sp1c = sp1.filter(a => a.isCorrect).length, sp2c = sp2.filter(a => a.isCorrect).length;
+            const sp1Text = sp1.length ? `${sp1c} / ${sp1.length} Betul` : 'Tiada Diuji';
+            const sp2Text = sp2.length ? `${sp2c} / ${sp2.length} Betul` : 'Tiada Diuji';
+            document.getElementById('sp1-score').textContent = sp1Text;
+            document.getElementById('sp2-score').textContent = sp2Text;
+
+            const title = document.getElementById('result-title'), icon = document.getElementById('result-icon');
+            const pct = total ? totalCorrect / total : 0;
+            if (pct === 1) { icon.textContent = '👑'; title.textContent = 'Tahniah! Komander Angkasa Ulung!'; }
+            else if (pct >= 0.7) { icon.textContent = '🚀'; title.textContent = 'Syabas! Misi Berjaya Dilaksanakan!'; }
+            else { icon.textContent = '🔧'; title.textContent = 'Teruskan Usaha, Kapten!'; }
+
+            const tbody = document.getElementById('review-table-body');
+            tbody.innerHTML = '';
+            userAnswersLog.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2 px-2 font-bold text-slate-400">${item.qNum}.</td>
+                    <td class="py-2 px-2 font-semibold text-white">${item.questionText}</td>
+                    <td class="py-2 px-2 ${item.isCorrect ? 'text-emerald-400 font-bold' : 'text-rose-400 line-through'}">${item.userAns} ${item.unit}</td>
+                    <td class="py-2 px-2 text-cyan-300 font-bold">${item.correctAns} ${item.unit}</td>
+                    <td class="py-2 px-2 text-center">${item.isCorrect ? '✅' : '❌'}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            saveRecord({ tarikh: new Date().toLocaleString('ms-MY'), nama: name, kelas: cls, misi: modeNames[currentMode], betul: totalCorrect, jumlah: total, skor: score, sp1: sp1Text, sp2: sp2Text });
+
+            sendToSheet({
+                nama: name, kelas: cls, misi: modeNames[currentMode],
+                betul: totalCorrect, jumlah: total,
+                peratus: total ? Math.round(totalCorrect / total * 100) : 0,
+                skor: score,
+                sp1Betul: sp1c, sp1Jumlah: sp1.length,
+                sp2Betul: sp2c, sp2Jumlah: sp2.length,
+                butiran: userAnswersLog.map(a => ({
+                    no: a.qNum, soalan: a.questionText, jawapanMurid: `${a.userAns} ${a.unit}`,
+                    jawapanTepat: `${a.correctAns} ${a.unit}`, status: a.isCorrect ? 'BETUL' : 'SALAH',
+                    jenis: a.type === 'whole' ? 'SP1 Nombor Bulat' : 'SP2 Perpuluhan'
+                }))
+            });
+        }
+
+        // ================== REKOD GURU ==================
+        // ================== GOOGLE SHEET ==================
+        // (SCRIPT_URL ditetapkan di bahagian TETAPAN GURU, baris atas skrip)
+        let pendingPayload = null;
+
+        function setSync(text, cls, showRetry) {
+            const el = document.getElementById('sync-status');
+            el.textContent = text;
+            el.className = 'font-semibold ' + cls;
+            document.getElementById('retry-sync').classList.toggle('hidden', !showRetry);
+        }
+
+        function sendToSheet(payload) {
+            pendingPayload = payload;
+            const url = (SCRIPT_URL || '').trim();
+            if (url && !/\/exec$/.test(url)) {
+                setSync('⚠️ SCRIPT_URL salah — mesti berakhir dengan /exec (bukan pautan GitHub)', 'text-rose-400', false);
+            } else if (url) {
+                setSync('Menghantar…', 'text-amber-300', false);
+                fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+                    .then(() => { setSync('✅ Dihantar', 'text-emerald-400', false); pendingPayload = null; })
+                    .catch(() => setSync('❌ Tiada sambungan internet', 'text-rose-400', true));
+            } else {
+                setSync('Tidak disambungkan (rekod hanya pada peranti ini)', 'text-slate-400', false);
+            }
+        }
+
+        function retrySync() { if (pendingPayload) sendToSheet(pendingPayload); }
+
+        const REC_KEY = 'misiAngkasaRekod';
+        function getRecords() { try { return JSON.parse(localStorage.getItem(REC_KEY)) || []; } catch (e) { return []; } }
+        function saveRecord(r) {
+            const recs = getRecords(); recs.push(r);
+            try { localStorage.setItem(REC_KEY, JSON.stringify(recs)); } catch (e) {}
+            updateRecordCount();
+        }
+        function updateRecordCount() { document.getElementById('record-count').textContent = getRecords().length; }
+        function downloadCSV() {
+            const recs = getRecords();
+            if (!recs.length) { alert('Tiada rekod untuk dimuat turun.'); return; }
+            const head = ['Tarikh', 'Nama', 'Kelas', 'Misi', 'Betul', 'Jumlah Soalan', 'Skor', 'SP1 Nombor Bulat', 'SP2 Perpuluhan'];
+            const esc = v => `"${String(v).replace(/"/g, '""')}"`;
+            const rows = recs.map(r => [r.tarikh, r.nama, r.kelas, r.misi, r.betul, r.jumlah, r.skor, r.sp1, r.sp2].map(esc).join(','));
+            const blob = new Blob(['\ufeff' + [head.map(esc).join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Rekod_Misi_Angkasa_Ukuran_Panjang.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+        function clearRecords() {
+            if (!confirm('Padam semua rekod murid yang disimpan pada peranti ini?')) return;
+            try { localStorage.removeItem(REC_KEY); } catch (e) {}
+            updateRecordCount();
+        }
+        updateRecordCount();
+        setAnswerMode(answerMode);
+    </script>
+</body>
+</html>
