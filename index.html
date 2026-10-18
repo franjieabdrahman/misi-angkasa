@@ -83,6 +83,25 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
+        /* ===== Lembaran Kerja ===== */
+        .ws-item { background: #f8fafc; color: #0f172a; border-radius: 16px; padding: 16px 18px; border: 2px solid #cbd5e1; }
+        .ws-item.done-ok { border-color: #10b981; background: #ecfdf5; }
+        .ws-item.done-bad { border-color: #f43f5e; background: #fff1f2; }
+        .ws-opt { border: 2px solid #94a3b8; background: #fff; color: #0f172a; border-radius: 12px; padding: 8px 6px; font-weight: 700; font-size: 17px; transition: all .15s; }
+        .ws-opt:hover:not(:disabled) { border-color: #6366f1; background: #eef2ff; }
+        .ws-opt.sel { border-color: #4f46e5; background: #4f46e5; color: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,.3); }
+        .ws-opt.right { border-color: #059669; background: #10b981; color: #fff; }
+        .ws-opt.wrong { border-color: #e11d48; background: #f43f5e; color: #fff; text-decoration: line-through; }
+        .ws-opt:disabled { cursor: default; }
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            body * { visibility: hidden; }
+            #worksheet-screen, #worksheet-screen * { visibility: visible; }
+            #worksheet-screen { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; border: none !important; box-shadow: none !important; }
+            .no-print { display: none !important; }
+            .ws-item { break-inside: avoid; border-color: #64748b !important; background: #fff !important; }
+            .ws-opt { border-color: #64748b !important; background: #fff !important; color: #000 !important; }
+        }
     </style>
 </head>
 <body class="relative flex flex-col justify-between min-h-screen p-4 md:p-6">
@@ -189,6 +208,18 @@
                         <p class="text-xs text-purple-100">Latihan rawak menukar unit melibatkan nombor perpuluhan.</p>
                     </div>
                     <div class="mt-4 text-right text-sm font-bold text-pink-300">Berlatih ➔</div>
+                </button>
+            </div>
+
+            <!-- LEMBARAN KERJA -->
+            <div class="mt-6 max-w-4xl mx-auto">
+                <button onclick="startGame('worksheet')" class="group w-full bg-gradient-to-r from-amber-500 to-orange-700 hover:from-amber-400 hover:to-orange-600 p-5 rounded-2xl border-2 border-amber-300 transition transform hover:-translate-y-1 shadow-lg text-left flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <span class="bg-orange-950 text-amber-200 text-xs px-2.5 py-1 rounded-full font-bold">Pilihan Jawapan • Boleh Dicetak</span>
+                        <h4 class="text-xl font-bold mt-3 mb-1 text-white">📝 Lembaran Kerja Murid</h4>
+                        <p class="text-xs text-amber-50">Baca ukuran pada garis, kemudian pilih jawapan yang betul (A, B, C atau D). Semak semua jawapan sekaligus.</p>
+                    </div>
+                    <div class="text-right text-sm font-bold text-white whitespace-nowrap">Buka Lembaran ➔</div>
                 </button>
             </div>
 
@@ -361,6 +392,27 @@
             </div>
         </section>
 
+        <!-- SKRIN LEMBARAN KERJA -->
+        <section id="worksheet-screen" class="hidden glass-panel rounded-3xl p-5 md:p-8 shadow-2xl">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+                <div>
+                    <h2 class="text-2xl font-bold text-amber-300">📝 Lembaran Kerja: Ukuran Panjang</h2>
+                    <p class="text-sm text-slate-300 mt-1">Sila nyatakan pilihan jawapan anda. Tukarkan setiap ukuran kepada unit yang diminta.</p>
+                    <p id="ws-student" class="text-xs text-indigo-300 mt-1"></p>
+                </div>
+                <div class="no-print flex gap-2">
+                    <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-3 py-2 rounded-xl">🖨️ Cetak</button>
+                </div>
+            </div>
+            <div id="ws-progress" class="no-print text-xs font-semibold text-slate-300 mb-3">Dijawab: 0 / 0</div>
+            <div id="ws-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="ws-feedback" class="no-print mt-5 min-h-[28px] text-center text-sm font-bold"></div>
+            <div class="no-print flex justify-between items-center gap-4 mt-3">
+                <button onclick="returnToMenu()" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition">⬅ Kembali</button>
+                <button id="ws-submit" onclick="checkWorksheet()" class="flex-1 md:flex-none md:min-w-[220px] bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform active:scale-95 transition text-lg">Hantar Lembaran ✅</button>
+            </div>
+        </section>
+
         <!-- SKRIN 4: KEPUTUSAN -->
         <section id="result-screen" class="hidden glass-panel rounded-3xl p-6 md:p-10 text-center shadow-2xl">
             <div id="result-icon" class="text-6xl mb-3">🏆</div>
@@ -455,6 +507,19 @@
         // ╚══════════════════════════════════════════════════════════════════╝
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz6dKEd9X3Mg-3kkU8OzaalhPhTypx_Shqh8lwH5Cv9fRLKiMoJ1HOTw6SqVtQzHRKnEg/exec';
 
+        // ╔══════════════════════════════════════════════════════════════════╗
+        // ║  LEMBARAN KERJA — guru boleh ubah / tambah soalan di sini.       ║
+        // ║  val = ukuran pada garis, from = unit asal, to = unit jawapan,   ║
+        // ║  ans = jawapan betul.                                            ║
+        // ╚══════════════════════════════════════════════════════════════════╝
+        const WORKSHEET = [
+            { val: 50,  from: 'mm', to: 'cm', ans: 5 },
+            { val: 140, from: 'mm', to: 'cm', ans: 14 },
+            { val: 60,  from: 'mm', to: 'cm', ans: 6 },
+            { val: 3.4, from: 'cm', to: 'mm', ans: 34 },
+            { val: 153, from: 'mm', to: 'cm', ans: 15.3 }
+        ];
+
         // ================== DATA ==================
         const diagnosticQuestions = [
             { qNum: 1, val: 5, from: 'cm', to: 'mm', ans: 50, part: 'BAHAGIAN A: NOMBOR BULAT', type: 'whole' },
@@ -518,9 +583,10 @@
 
         // ================== NAVIGASI ==================
         function showScreen(id) {
-            ['start-screen', 'game-screen', 'lab-screen', 'result-screen'].forEach(s =>
+            ['start-screen', 'game-screen', 'lab-screen', 'worksheet-screen', 'result-screen'].forEach(s =>
                 document.getElementById(s).classList.toggle('hidden', s !== id));
             document.getElementById('hud').classList.toggle('hidden', !(id === 'game-screen' || id === 'lab-screen'));
+            try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
         }
 
         function resetStats() {
@@ -532,6 +598,7 @@
             currentMode = mode;
             resetStats();
             if (mode === 'lab' || mode === 'ar') { startLab(mode); return; }
+            if (mode === 'worksheet') { startWorksheet(); return; }
 
             if (mode === 'diagnostic') {
                 questions = [...diagnosticQuestions];
@@ -759,6 +826,109 @@
                 if (opts.length < 4 && f > 0 && !opts.includes(f)) opts.push(f);
             });
             return shuffle(opts);
+        }
+
+        // ================== LEMBARAN KERJA ==================
+        let wsItems = [];
+
+        function startWorksheet() {
+            stopArCam();
+            const name = document.getElementById('player-name').value.trim();
+            const cls = document.getElementById('player-class').value.trim();
+            document.getElementById('ws-student').textContent =
+                `Nama: ${name || '______________________'}   Kelas: ${cls || '__________'}`;
+            const maxCm = Math.max(...WORKSHEET.map(w => w.from === 'cm' ? w.val : w.val / 10));
+            wsItems = WORKSHEET.map((w, i) => {
+                const q = { qNum: i + 1, val: w.val, from: w.from, to: w.to, ans: w.ans,
+                            type: Number.isInteger(w.from === 'cm' ? w.val : w.val / 10) ? 'whole' : 'decimal' };
+                return { q, opts: makeOptions(q), chosen: null, lenPct: Math.max(35, ((w.from === 'cm' ? w.val : w.val / 10) / maxCm) * 100) };
+            });
+            const list = document.getElementById('ws-list');
+            list.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D'];
+            wsItems.forEach((it, i) => {
+                const card = document.createElement('div');
+                card.className = 'ws-item';
+                card.id = 'ws-item-' + i;
+                card.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <span class="text-lg font-bold text-slate-700">${i + 1}.</span>
+                        <div class="flex-1">
+                            <p class="text-center font-bold text-rose-600 mb-1">Jawapan = <span id="ws-ans-${i}">____</span> ${it.q.to}</p>
+                            <div class="mx-auto" style="width:${it.lenPct}%">
+                                <svg viewBox="0 0 100 20" preserveAspectRatio="none" class="w-full h-6 block">
+                                    <line x1="1" y1="10" x2="99" y2="10" stroke="#1e5a8a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+                                    <line x1="1" y1="0" x2="1" y2="20" stroke="#1e5a8a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+                                    <line x1="99" y1="0" x2="99" y2="20" stroke="#1e5a8a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+                                </svg>
+                            </div>
+                            <p class="text-center text-lg font-semibold text-slate-900 mt-1">${it.q.val} ${it.q.from}</p>
+                            <div class="grid grid-cols-2 gap-2 mt-3">
+                                ${it.opts.map((o, k) => `<button class="ws-opt" data-i="${i}" data-val="${o}" onclick="chooseWs(${i}, this)">${letters[k]}. ${o} ${it.q.to}</button>`).join('')}
+                            </div>
+                            <p id="ws-note-${i}" class="text-xs font-semibold mt-2 min-h-[16px]"></p>
+                        </div>
+                    </div>`;
+                list.appendChild(card);
+            });
+            document.getElementById('ws-feedback').textContent = '';
+            const sb = document.getElementById('ws-submit');
+            sb.disabled = false; sb.classList.remove('opacity-50');
+            sb.textContent = 'Hantar Lembaran ✅';
+            sb.onclick = checkWorksheet;
+            updateWsProgress();
+            showScreen('worksheet-screen');
+        }
+
+        function chooseWs(i, btn) {
+            if (isProcessing) return;
+            wsItems[i].chosen = parseFloat(btn.dataset.val);
+            document.querySelectorAll(`#ws-item-${i} .ws-opt`).forEach(b => b.classList.toggle('sel', b === btn));
+            document.getElementById('ws-ans-' + i).textContent = btn.dataset.val;
+            updateWsProgress();
+        }
+
+        function updateWsProgress() {
+            const done = wsItems.filter(it => it.chosen !== null).length;
+            document.getElementById('ws-progress').textContent = `Dijawab: ${done} / ${wsItems.length}`;
+        }
+
+        function checkWorksheet() {
+            if (isProcessing) return;
+            const fb = document.getElementById('ws-feedback');
+            const left = wsItems.filter(it => it.chosen === null).length;
+            if (left) {
+                fb.textContent = `⚠️ Masih ada ${left} soalan belum dijawab, Kapten!`;
+                fb.className = 'no-print mt-5 min-h-[28px] text-center text-sm font-bold text-amber-400';
+                return;
+            }
+            isProcessing = true;
+            userAnswersLog = []; score = 0; streak = 0;
+            let correct = 0;
+            wsItems.forEach((it, i) => {
+                const ok = Math.abs(it.chosen - it.q.ans) < 0.0001;
+                if (ok) { correct++; awardCorrect(); } else { streak = 0; }
+                const card = document.getElementById('ws-item-' + i);
+                card.classList.add(ok ? 'done-ok' : 'done-bad');
+                card.querySelectorAll('.ws-opt').forEach(b => {
+                    b.disabled = true;
+                    const v = parseFloat(b.dataset.val);
+                    if (Math.abs(v - it.q.ans) < 0.0001) b.classList.add('right');
+                    else if (v === it.chosen) b.classList.add('wrong');
+                });
+                const op = it.q.from === 'cm' ? `${it.q.val} × 10 = ${it.q.ans}` : `${it.q.val} ÷ 10 = ${it.q.ans}`;
+                const note = document.getElementById('ws-note-' + i);
+                note.textContent = ok ? '✅ Betul!' : `❌ Jawapan betul: ${it.q.ans} ${it.q.to} (${op})`;
+                note.className = 'text-xs font-semibold mt-2 min-h-[16px] ' + (ok ? 'text-emerald-700' : 'text-rose-700');
+                userAnswersLog.push({ qNum: it.q.qNum, questionText: `${it.q.val} ${it.q.from} = ___ ${it.q.to}`,
+                    userAns: String(it.chosen), correctAns: it.q.ans, unit: it.q.to, isCorrect: ok, type: it.q.type });
+            });
+            playSound(correct === wsItems.length ? 'win' : (correct >= wsItems.length / 2 ? 'correct' : 'wrong'));
+            fb.textContent = `Keputusan: ${correct} / ${wsItems.length} betul. Semak pembetulan di atas.`;
+            fb.className = 'no-print mt-5 min-h-[28px] text-center text-base font-bold ' + (correct === wsItems.length ? 'text-emerald-400' : 'text-amber-300');
+            const sb = document.getElementById('ws-submit');
+            sb.textContent = 'Lihat Keputusan & Simpan ➔';
+            sb.onclick = () => { isProcessing = false; endGame(); };
         }
 
         function renderArOptions(q) {
@@ -1270,7 +1440,7 @@
         }
 
         // ================== KEPUTUSAN ==================
-        const modeNames = { diagnostic: 'Diagnostik', whole: 'Nombor Bulat', decimal: 'Perpuluhan', lab: 'Makmal Pembaris', ar: 'Pembaris AR' };
+        const modeNames = { worksheet: 'Lembaran Kerja', diagnostic: 'Diagnostik', whole: 'Nombor Bulat', decimal: 'Perpuluhan', lab: 'Makmal Pembaris', ar: 'Pembaris AR' };
 
         function endGame() {
             stopCamera();
