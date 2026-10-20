@@ -70,6 +70,54 @@
         .ar-bubble.correct { background: radial-gradient(circle at 30% 30%, #a7f3d0, #059669 60%) !important; animation: none; box-shadow: 0 0 50px #34d399; }
         .ar-bubble.wrong { background: radial-gradient(circle at 30% 30%, #fecdd3, #be123c 60%) !important; animation: none; }
         .ar-bubble.dim { opacity: .35; animation: none; }
+        /* ===== Papan Ular & Tangga Angkasa ===== */
+        #board {
+            background:
+                radial-gradient(circle at 15% 20%, rgba(168,85,247,.35), transparent 35%),
+                radial-gradient(circle at 85% 75%, rgba(6,182,212,.30), transparent 40%),
+                radial-gradient(circle at 60% 10%, rgba(236,72,153,.22), transparent 30%),
+                #0b1023;
+        }
+        .tile {
+            position: relative; border: 1px solid rgba(148,163,184,.18);
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(16px, 3.6vw, 30px);
+        }
+        .tile:nth-child(odd) { background: rgba(99,102,241,.10); }
+        .tile .tnum { position: absolute; top: 2px; left: 4px; font-size: 10px; font-weight: 700; color: rgba(226,232,240,.7); }
+        .tile.ladder { background: rgba(16,185,129,.22); }
+        .tile.snake { background: rgba(217,70,239,.22); }
+        .tile.goal { background: radial-gradient(circle, rgba(56,189,248,.55), rgba(30,64,175,.35)); }
+        .tile.start { background: rgba(251,191,36,.20); }
+        .tile .tlabel { position: absolute; bottom: 1px; left: 0; right: 0; text-align: center; font-size: 8px; font-weight: 700; letter-spacing: .3px; color: #e2e8f0; opacity: .85; }
+        #astro {
+            position: absolute; transform: translate(-50%, -60%); z-index: 5;
+            font-size: clamp(26px, 5.5vw, 46px); line-height: 1;
+            filter: drop-shadow(0 0 10px rgba(253,224,71,.9));
+            transition: left .22s ease, top .22s ease;
+        }
+        #astro.fly { transition: left .8s cubic-bezier(.5,-0.3,.5,1.3), top .8s cubic-bezier(.5,-0.3,.5,1.3); }
+        @keyframes hop { 0%,100% { transform: translate(-50%,-60%) scale(1); } 50% { transform: translate(-50%,-95%) scale(1.15); } }
+        #astro.hop { animation: hop .22s ease; }
+        @keyframes wobble { 0%,100% { transform: translate(-50%,-60%) rotate(0); } 25% { transform: translate(-50%,-60%) rotate(-18deg); } 75% { transform: translate(-50%,-60%) rotate(18deg); } }
+        #astro.wobble { animation: wobble .3s ease 3; }
+        #dice {
+            position: absolute; inset: 0; z-index: 6; display: none; align-items: center; justify-content: center;
+            background: rgba(2,6,23,.55); font-size: clamp(60px, 14vw, 110px); line-height: 1; color: #fde047;
+            text-shadow: 0 0 30px rgba(253,224,71,.8);
+        }
+        #board-toast {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) scale(.6); z-index: 7;
+            opacity: 0; pointer-events: none; transition: all .25s ease;
+            background: rgba(15,23,42,.92); border: 2px solid #fde047; border-radius: 14px;
+            padding: 10px 16px; font-weight: 700; text-align: center; font-size: clamp(13px, 2.4vw, 18px); max-width: 85%;
+        }
+        #board-toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+        /* Hiasan angkasa di latar */
+        .deco { position: fixed; pointer-events: none; z-index: 0; user-select: none; line-height: 1; }
+        @keyframes drift { 0%,100% { transform: translate(0,0) rotate(-8deg); } 50% { transform: translate(18px,-22px) rotate(8deg); } }
+        @keyframes spinSlow { to { transform: rotate(360deg); } }
+        @keyframes peek { 0%,70%,100% { transform: translateY(0); } 80%,90% { transform: translateY(-14px); } }
         .ans-mode-btn.active { background: linear-gradient(90deg, #d946ef, #6366f1); border-color: #f0abfc; color: #fff; }
         #ruler { touch-action: none; cursor: grab; }
         #ruler:active { cursor: grabbing; }
@@ -83,30 +131,19 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
-        /* ===== Lembaran Kerja ===== */
-        .ws-item { background: #f8fafc; color: #0f172a; border-radius: 16px; padding: 16px 18px; border: 2px solid #cbd5e1; }
-        .ws-item.done-ok { border-color: #10b981; background: #ecfdf5; }
-        .ws-item.done-bad { border-color: #f43f5e; background: #fff1f2; }
-        .ws-opt { border: 2px solid #94a3b8; background: #fff; color: #0f172a; border-radius: 12px; padding: 8px 6px; font-weight: 700; font-size: 17px; transition: all .15s; }
-        .ws-opt:hover:not(:disabled) { border-color: #6366f1; background: #eef2ff; }
-        .ws-opt.sel { border-color: #4f46e5; background: #4f46e5; color: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,.3); }
-        .ws-opt.right { border-color: #059669; background: #10b981; color: #fff; }
-        .ws-opt.wrong { border-color: #e11d48; background: #f43f5e; color: #fff; text-decoration: line-through; }
-        .ws-opt:disabled { cursor: default; }
-        @media print {
-            body { background: #fff !important; color: #000 !important; }
-            body * { visibility: hidden; }
-            #worksheet-screen, #worksheet-screen * { visibility: visible; }
-            #worksheet-screen { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; border: none !important; box-shadow: none !important; }
-            .no-print { display: none !important; }
-            .ws-item { break-inside: avoid; border-color: #64748b !important; background: #fff !important; }
-            .ws-opt { border-color: #64748b !important; background: #fff !important; color: #000 !important; }
-        }
     </style>
 </head>
 <body class="relative flex flex-col justify-between min-h-screen p-4 md:p-6">
 
     <div class="stars"></div>
+    <!-- Hiasan angkasa -->
+    <div class="deco" style="top:9%; right:3%; font-size:110px; opacity:.55; animation: spinSlow 120s linear infinite;">🪐</div>
+    <div class="deco hidden md:block" style="bottom:6%; left:2%; font-size:90px; opacity:.5;">🌍</div>
+    <div class="deco hidden md:block" style="top:38%; left:3%; font-size:64px; opacity:.75; animation: drift 7s ease-in-out infinite;">🧑‍🚀</div>
+    <div class="deco hidden md:block" style="bottom:12%; right:4%; font-size:58px; opacity:.8; animation: peek 6s ease-in-out infinite;">👽</div>
+    <div class="deco hidden lg:block" style="top:65%; right:12%; font-size:40px; opacity:.6; animation: drift 9s ease-in-out infinite reverse;">☄️</div>
+    <div class="deco hidden lg:block" style="top:18%; left:14%; font-size:34px; opacity:.6;">🌙</div>
+    <div class="deco hidden lg:block" style="top:80%; left:30%; font-size:30px; opacity:.5; animation: drift 11s ease-in-out infinite;">🛰️</div>
 
     <!-- Bar Status Atas -->
     <header class="relative z-10 max-w-5xl w-full mx-auto flex flex-wrap justify-between items-center gap-4 glass-panel p-4 rounded-2xl shadow-lg">
@@ -136,7 +173,11 @@
 
         <!-- SKRIN 1: MULA -->
         <section id="start-screen" class="glass-panel rounded-3xl p-6 md:p-10 text-center shadow-2xl">
-            <div class="spaceship-float inline-block text-7xl mb-4">🛸</div>
+            <div class="flex items-end justify-center gap-4 mb-4 select-none">
+                <span class="text-5xl" style="animation: drift 6s ease-in-out infinite;">🧑‍🚀</span>
+                <span class="spaceship-float inline-block text-7xl">🛸</span>
+                <span class="text-5xl" style="animation: peek 5s ease-in-out infinite;">👽</span>
+            </div>
             <h2 class="text-3xl md:text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">
                 Selamat Datang, Kapten!
             </h2>
@@ -211,18 +252,6 @@
                 </button>
             </div>
 
-            <!-- LEMBARAN KERJA -->
-            <div class="mt-6 max-w-4xl mx-auto">
-                <button onclick="startGame('worksheet')" class="group w-full bg-gradient-to-r from-amber-500 to-orange-700 hover:from-amber-400 hover:to-orange-600 p-5 rounded-2xl border-2 border-amber-300 transition transform hover:-translate-y-1 shadow-lg text-left flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <div>
-                        <span class="bg-orange-950 text-amber-200 text-xs px-2.5 py-1 rounded-full font-bold">Pilihan Jawapan • Boleh Dicetak</span>
-                        <h4 class="text-xl font-bold mt-3 mb-1 text-white">📝 Lembaran Kerja Murid</h4>
-                        <p class="text-xs text-amber-50">Baca ukuran pada garis, kemudian pilih jawapan yang betul (A, B, C atau D). Semak semua jawapan sekaligus.</p>
-                    </div>
-                    <div class="text-right text-sm font-bold text-white whitespace-nowrap">Buka Lembaran ➔</div>
-                </button>
-            </div>
-
             <!-- MOD BAHARU: PENGUKURAN SEBENAR -->
             <div class="mt-6 max-w-4xl mx-auto">
                 <div class="flex items-center gap-3 mb-3">
@@ -259,13 +288,35 @@
                 </div>
             </div>
 
+            <div class="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+            <!-- Papan Ular & Tangga Angkasa -->
+            <div id="board-wrap" class="mb-5 max-w-xl mx-auto w-full lg:sticky lg:top-4">
+                <div class="flex items-center justify-between mb-2 text-xs gap-2">
+                    <span class="text-indigo-200 font-bold">🗺️ Bawa astronaut pulang ke Planet Bumi 🌍</span>
+                    <span id="board-pos" class="text-amber-300 font-bold whitespace-nowrap">Petak 1 / 30</span>
+                </div>
+                <div id="board" class="relative w-full rounded-2xl overflow-hidden border-2 border-indigo-400/50 shadow-lg" style="aspect-ratio: 6 / 5;">
+                    <div id="board-grid" class="absolute inset-0 grid grid-cols-6 grid-rows-5"></div>
+                    <svg id="board-links" class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 600 500" preserveAspectRatio="none"></svg>
+                    <div id="astro">🧑‍🚀</div>
+                    <div id="dice">⚀</div>
+                    <div id="board-toast"></div>
+                </div>
+                <div class="flex flex-wrap justify-center gap-3 mt-2 text-[11px] text-slate-300">
+                    <span>✅ Jawapan betul = baling dadu 🎲</span>
+                    <span>🚀 Roket = naik</span>
+                    <span>👾 Alien = turun</span>
+                </div>
+            </div>
+
+            <div id="question-col">
             <div class="text-center mb-4">
                 <span id="category-badge" class="inline-block bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 text-xs font-bold px-3 py-1 rounded-full">BAHAGIAN A: NOMBOR BULAT</span>
             </div>
 
             <div class="bg-slate-900/90 border-2 border-slate-700 rounded-2xl p-6 md:p-10 text-center mb-6">
                 <p class="text-xs text-slate-400 uppercase tracking-widest mb-3">Tukarkan ukuran komponen berikut:</p>
-                <div class="flex flex-wrap items-center justify-center gap-3 md:gap-5 text-3xl md:text-5xl font-bold">
+                <div class="flex flex-wrap items-center justify-center gap-3 md:gap-5 text-3xl md:text-5xl lg:text-4xl xl:text-5xl font-bold">
                     <span id="q-value" class="text-cyan-400">5</span>
                     <span id="q-from-unit" class="text-slate-300">cm</span>
                     <span class="text-slate-500">=</span>
@@ -285,7 +336,7 @@
                     <div id="ar-bubbles" class="absolute inset-0"></div>
                     <canvas id="ar-hand" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
                     <div id="ar-status" class="absolute top-2 left-2 text-[11px] bg-slate-900/80 text-slate-200 px-2 py-1 rounded-lg pointer-events-none">Memulakan kamera…</div>
-                    <div class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-slate-900/80 text-fuchsia-200 px-3 py-1 rounded-lg pointer-events-none whitespace-nowrap">Ketik gelembung jawapan • atau tuding dengan jari telunjuk ☝️</div>
+                    <div class="absolute bottom-2 left-2 right-2 text-center text-[11px] bg-slate-900/80 text-fuchsia-200 px-3 py-1 rounded-lg pointer-events-none">Ketik gelembung jawapan • atau tuding dengan jari telunjuk ☝️</div>
                 </div>
                 <div class="flex flex-wrap justify-center gap-2 mt-3 text-xs">
                     <button id="hand-btn" onclick="toggleHandControl()" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold px-4 py-2 rounded-lg">🖐️ Hidupkan Kawalan Tangan</button>
@@ -321,6 +372,8 @@
                 <button id="submit-btn" onclick="checkAnswer()" class="flex-1 md:flex-none md:min-w-[200px] bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform active:scale-95 transition text-lg">
                     Lancarkan Jawapan! 🚀
                 </button>
+            </div>
+            </div>
             </div>
         </section>
 
@@ -392,32 +445,12 @@
             </div>
         </section>
 
-        <!-- SKRIN LEMBARAN KERJA -->
-        <section id="worksheet-screen" class="hidden glass-panel rounded-3xl p-5 md:p-8 shadow-2xl">
-            <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
-                <div>
-                    <h2 class="text-2xl font-bold text-amber-300">📝 Lembaran Kerja: Ukuran Panjang</h2>
-                    <p class="text-sm text-slate-300 mt-1">Sila nyatakan pilihan jawapan anda. Tukarkan setiap ukuran kepada unit yang diminta.</p>
-                    <p id="ws-student" class="text-xs text-indigo-300 mt-1"></p>
-                </div>
-                <div class="no-print flex gap-2">
-                    <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-3 py-2 rounded-xl">🖨️ Cetak</button>
-                </div>
-            </div>
-            <div id="ws-progress" class="no-print text-xs font-semibold text-slate-300 mb-3">Dijawab: 0 / 0</div>
-            <div id="ws-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            <div id="ws-feedback" class="no-print mt-5 min-h-[28px] text-center text-sm font-bold"></div>
-            <div class="no-print flex justify-between items-center gap-4 mt-3">
-                <button onclick="returnToMenu()" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition">⬅ Kembali</button>
-                <button id="ws-submit" onclick="checkWorksheet()" class="flex-1 md:flex-none md:min-w-[220px] bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform active:scale-95 transition text-lg">Hantar Lembaran ✅</button>
-            </div>
-        </section>
-
         <!-- SKRIN 4: KEPUTUSAN -->
         <section id="result-screen" class="hidden glass-panel rounded-3xl p-6 md:p-10 text-center shadow-2xl">
             <div id="result-icon" class="text-6xl mb-3">🏆</div>
             <h2 id="result-title" class="text-3xl font-bold text-amber-300 mb-1">Misi Berjaya!</h2>
-            <p id="player-info-display" class="text-sm text-indigo-300 mb-6"></p>
+            <p id="player-info-display" class="text-sm text-indigo-300 mb-2"></p>
+            <p id="board-result" class="text-base font-bold text-cyan-300 mb-6"></p>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto mb-8">
                 <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700">
@@ -507,19 +540,6 @@
         // ╚══════════════════════════════════════════════════════════════════╝
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz6dKEd9X3Mg-3kkU8OzaalhPhTypx_Shqh8lwH5Cv9fRLKiMoJ1HOTw6SqVtQzHRKnEg/exec';
 
-        // ╔══════════════════════════════════════════════════════════════════╗
-        // ║  LEMBARAN KERJA — guru boleh ubah / tambah soalan di sini.       ║
-        // ║  val = ukuran pada garis, from = unit asal, to = unit jawapan,   ║
-        // ║  ans = jawapan betul.                                            ║
-        // ╚══════════════════════════════════════════════════════════════════╝
-        const WORKSHEET = [
-            { val: 50,  from: 'mm', to: 'cm', ans: 5 },
-            { val: 140, from: 'mm', to: 'cm', ans: 14 },
-            { val: 60,  from: 'mm', to: 'cm', ans: 6 },
-            { val: 3.4, from: 'cm', to: 'mm', ans: 34 },
-            { val: 153, from: 'mm', to: 'cm', ans: 15.3 }
-        ];
-
         // ================== DATA ==================
         const diagnosticQuestions = [
             { qNum: 1, val: 5, from: 'cm', to: 'mm', ans: 50, part: 'BAHAGIAN A: NOMBOR BULAT', type: 'whole' },
@@ -583,7 +603,7 @@
 
         // ================== NAVIGASI ==================
         function showScreen(id) {
-            ['start-screen', 'game-screen', 'lab-screen', 'worksheet-screen', 'result-screen'].forEach(s =>
+            ['start-screen', 'game-screen', 'lab-screen', 'result-screen'].forEach(s =>
                 document.getElementById(s).classList.toggle('hidden', s !== id));
             document.getElementById('hud').classList.toggle('hidden', !(id === 'game-screen' || id === 'lab-screen'));
             try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
@@ -598,7 +618,6 @@
             currentMode = mode;
             resetStats();
             if (mode === 'lab' || mode === 'ar') { startLab(mode); return; }
-            if (mode === 'worksheet') { startWorksheet(); return; }
 
             if (mode === 'diagnostic') {
                 questions = [...diagnosticQuestions];
@@ -611,6 +630,7 @@
                 document.getElementById('mission-title').textContent = '🎯 LATIHAN: NOMBOR PERPULUHAN (SP 2)';
             }
             showScreen('game-screen');
+            initBoard();
             applyAnswerModeUI();
             if (answerMode === 'ar') startArCam(); else stopArCam();
             updateHUD();
@@ -663,8 +683,13 @@
         function loadQuestion() {
             isProcessing = false;
             const q = questions[currentIndex];
-            document.getElementById('question-counter').textContent = `Soalan ${currentIndex + 1} / ${questions.length}`;
-            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+            if (currentMode === 'diagnostic') {
+                document.getElementById('question-counter').textContent = `Soalan ${currentIndex + 1} / ${questions.length}`;
+                document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+            } else {
+                document.getElementById('question-counter').textContent = `Soalan ${currentIndex + 1} • Petak ${boardState.pos} / ${BOARD_SIZE}`;
+                document.getElementById('progress-bar').style.width = `${(boardState.pos / BOARD_SIZE) * 100}%`;
+            }
 
             const badge = document.getElementById('category-badge');
             badge.textContent = q.part;
@@ -775,10 +800,153 @@
                 feedback.className = 'mt-4 min-h-[28px] text-sm font-bold text-rose-400';
             }
             updateHUD();
-            setTimeout(() => {
-                currentIndex++;
-                currentIndex < questions.length ? loadQuestion() : endGame();
-            }, 1600);
+            setTimeout(async () => {
+                await boardTurn(isCorrect);
+                advanceQuestion();
+            }, 1100);
+        }
+
+        // ================== PAPAN ULAR & TANGGA ANGKASA ==================
+        const BOARD_SIZE = 30, MAX_PRACTICE_Q = 20;
+        const LADDERS = { 4: 13, 9: 18, 15: 24, 20: 27 };   // 🚀 roket: naik
+        const SNAKES  = { 17: 7, 23: 12, 29: 21 };          // 👾 alien: turun
+        const TILE_DECOR = { 2: '⭐', 6: '🌑', 8: '☄️', 11: '🛰️', 14: '🪐', 19: '🌙', 22: '⭐', 25: '🛸', 26: '☄️', 28: '🪐' };
+        const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        const boardState = { pos: 1, reached: false, ladders: 0, snakes: 0 };
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        function tileRC(n) {
+            const r = Math.floor((n - 1) / 6);          // baris dari bawah (0-4)
+            let c = (n - 1) % 6;
+            if (r % 2 === 1) c = 5 - c;                  // laluan zig-zag
+            return { r, c };
+        }
+
+        function buildBoard() {
+            const grid = document.getElementById('board-grid');
+            if (grid.childElementCount) return;
+            for (let n = 1; n <= BOARD_SIZE; n++) {
+                const { r, c } = tileRC(n);
+                const t = document.createElement('div');
+                t.className = 'tile';
+                t.style.gridRow = String(5 - r);
+                t.style.gridColumn = String(c + 1);
+                let icon = TILE_DECOR[n] || '', label = '';
+                if (n === 1) { t.classList.add('start'); icon = '🚀'; label = 'MULA'; }
+                else if (n === BOARD_SIZE) { t.classList.add('goal'); icon = '🌍'; label = 'BUMI'; }
+                else if (LADDERS[n]) { t.classList.add('ladder'); icon = '🚀'; label = '→ ' + LADDERS[n]; }
+                else if (SNAKES[n]) { t.classList.add('snake'); icon = '👾'; label = '→ ' + SNAKES[n]; }
+                t.innerHTML = `<span class="tnum">${n}</span><span style="opacity:${TILE_DECOR[n] && !LADDERS[n] && !SNAKES[n] ? .55 : 1}">${icon}</span>${label ? `<span class="tlabel">${label}</span>` : ''}`;
+                grid.appendChild(t);
+            }
+            // Lukis laluan roket & alien
+            const svg = document.getElementById('board-links');
+            const ctr = n => { const { r, c } = tileRC(n); return { x: c * 100 + 50, y: (4 - r) * 100 + 50 }; };
+            let html = `<defs><marker id="arrUp" markerUnits="userSpaceOnUse" markerWidth="26" markerHeight="26" refX="20" refY="13" orient="auto"><path d="M0,0 L26,13 L0,26 z" fill="#34d399"/></marker>
+                        <marker id="arrDn" markerUnits="userSpaceOnUse" markerWidth="26" markerHeight="26" refX="20" refY="13" orient="auto"><path d="M0,0 L26,13 L0,26 z" fill="#e879f9"/></marker></defs>`;
+            Object.entries(LADDERS).forEach(([a, b]) => {
+                const p = ctr(+a), q = ctr(+b);
+                html += `<line x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="#34d399" stroke-width="6" stroke-dasharray="14 9" stroke-linecap="round" opacity=".65" marker-end="url(#arrUp)"/>`;
+            });
+            Object.entries(SNAKES).forEach(([a, b]) => {
+                const p = ctr(+a), q = ctr(+b);
+                const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2, dx = q.x - p.x, dy = q.y - p.y;
+                const len = Math.hypot(dx, dy) || 1, nx = -dy / len * 55, ny = dx / len * 55;
+                html += `<path d="M${p.x},${p.y} Q${mx + nx},${my + ny} ${mx},${my} T${q.x},${q.y}" fill="none" stroke="#e879f9" stroke-width="6" stroke-linecap="round" opacity=".55" marker-end="url(#arrDn)"/>`;
+            });
+            svg.innerHTML = html;
+        }
+
+        function placeAstro(n, mode) {
+            const a = document.getElementById('astro');
+            const { r, c } = tileRC(n);
+            a.classList.toggle('fly', mode === 'fly');
+            a.style.left = ((c + 0.5) / 6 * 100) + '%';
+            a.style.top = (((4 - r) + 0.5) / 5 * 100) + '%';
+            if (mode === 'hop') { a.classList.remove('hop'); void a.offsetWidth; a.classList.add('hop'); }
+            document.getElementById('board-pos').textContent = n >= BOARD_SIZE ? '🌍 Sampai ke Bumi!' : `Petak ${n} / ${BOARD_SIZE}`;
+        }
+
+        function initBoard() {
+            buildBoard();
+            Object.assign(boardState, { pos: 1, reached: false, ladders: 0, snakes: 0 });
+            placeAstro(1);
+        }
+
+        async function boardToast(html, ms) {
+            const t = document.getElementById('board-toast');
+            t.innerHTML = html; t.classList.add('show');
+            await sleep(ms); t.classList.remove('show'); await sleep(200);
+        }
+
+        function playTone(freqs, type = 'triangle', dur = 0.12) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const t0 = audioCtx.currentTime;
+                freqs.forEach((f, i) => {
+                    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = type; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0.12, t0 + i * dur); g.gain.exponentialRampToValueAtTime(0.01, t0 + (i + 1) * dur);
+                    o.start(t0 + i * dur); o.stop(t0 + (i + 1) * dur);
+                });
+            } catch (e) {}
+        }
+
+        async function boardTurn(isCorrect) {
+            if (boardState.reached) return;
+            const astro = document.getElementById('astro');
+            if (!isCorrect) {
+                astro.classList.remove('wobble'); void astro.offsetWidth; astro.classList.add('wobble');
+                await boardToast('👾 Alien menghalang!<br><span class="text-xs font-normal">Jawab betul untuk baling dadu.</span>', 1100);
+                return;
+            }
+            // Baling dadu
+            const dice = document.getElementById('dice');
+            dice.style.display = 'flex';
+            const roll = 1 + Math.floor(Math.random() * 6);
+            for (let i = 0; i < 9; i++) { dice.textContent = DICE_FACES[Math.floor(Math.random() * 6)]; playTone([300 + i * 40], 'square', 0.03); await sleep(70); }
+            dice.textContent = DICE_FACES[roll - 1];
+            await sleep(550);
+            dice.style.display = 'none';
+            // Gerak petak demi petak
+            const target = Math.min(BOARD_SIZE, boardState.pos + roll);
+            while (boardState.pos < target) {
+                boardState.pos++;
+                placeAstro(boardState.pos, 'hop');
+                playTone([520 + boardState.pos * 8], 'sine', 0.06);
+                await sleep(260);
+            }
+            // Roket / Alien
+            if (LADDERS[boardState.pos]) {
+                const to = LADDERS[boardState.pos];
+                await boardToast(`🚀 Roket Turbo!<br><span class="text-xs font-normal">Terbang ke petak ${to}</span>`, 900);
+                boardState.pos = to; boardState.ladders++;
+                placeAstro(to, 'fly'); playTone([523, 659, 784, 1047]); await sleep(900);
+            } else if (SNAKES[boardState.pos]) {
+                const to = SNAKES[boardState.pos];
+                await boardToast(`👾 Alien menarik astronaut!<br><span class="text-xs font-normal">Turun ke petak ${to}</span>`, 900);
+                boardState.pos = to; boardState.snakes++;
+                placeAstro(to, 'fly'); playTone([400, 300, 220], 'sawtooth'); await sleep(900);
+            }
+            if (boardState.pos >= BOARD_SIZE) {
+                boardState.reached = true;
+                playSound('win');
+                await boardToast('🌍 Astronaut selamat pulang ke Bumi! 🎉', 1500);
+            }
+        }
+
+        function advanceQuestion() {
+            currentIndex++;
+            const practice = currentMode !== 'diagnostic';
+            if (practice && boardState.reached) return endGame();
+            if (currentIndex < questions.length) return loadQuestion();
+            if (practice && questions.length < MAX_PRACTICE_Q) {
+                const q = generatePracticeQuestions(currentMode, 1)[0];
+                q.qNum = questions.length + 1;
+                questions.push(q);
+                return loadQuestion();
+            }
+            endGame();
         }
 
         // ================== PILIH JAWAPAN AR ==================
@@ -826,109 +994,6 @@
                 if (opts.length < 4 && f > 0 && !opts.includes(f)) opts.push(f);
             });
             return shuffle(opts);
-        }
-
-        // ================== LEMBARAN KERJA ==================
-        let wsItems = [];
-
-        function startWorksheet() {
-            stopArCam();
-            const name = document.getElementById('player-name').value.trim();
-            const cls = document.getElementById('player-class').value.trim();
-            document.getElementById('ws-student').textContent =
-                `Nama: ${name || '______________________'}   Kelas: ${cls || '__________'}`;
-            const maxCm = Math.max(...WORKSHEET.map(w => w.from === 'cm' ? w.val : w.val / 10));
-            wsItems = WORKSHEET.map((w, i) => {
-                const q = { qNum: i + 1, val: w.val, from: w.from, to: w.to, ans: w.ans,
-                            type: Number.isInteger(w.from === 'cm' ? w.val : w.val / 10) ? 'whole' : 'decimal' };
-                return { q, opts: makeOptions(q), chosen: null, lenPct: Math.max(35, ((w.from === 'cm' ? w.val : w.val / 10) / maxCm) * 100) };
-            });
-            const list = document.getElementById('ws-list');
-            list.innerHTML = '';
-            const letters = ['A', 'B', 'C', 'D'];
-            wsItems.forEach((it, i) => {
-                const card = document.createElement('div');
-                card.className = 'ws-item';
-                card.id = 'ws-item-' + i;
-                card.innerHTML = `
-                    <div class="flex items-start gap-3">
-                        <span class="text-lg font-bold text-slate-700">${i + 1}.</span>
-                        <div class="flex-1">
-                            <p class="text-center font-bold text-rose-600 mb-1">Jawapan = <span id="ws-ans-${i}">____</span> ${it.q.to}</p>
-                            <div class="mx-auto" style="width:${it.lenPct}%">
-                                <svg viewBox="0 0 100 20" preserveAspectRatio="none" class="w-full h-6 block">
-                                    <line x1="1" y1="10" x2="99" y2="10" stroke="#1e5a8a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
-                                    <line x1="1" y1="0" x2="1" y2="20" stroke="#1e5a8a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
-                                    <line x1="99" y1="0" x2="99" y2="20" stroke="#1e5a8a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
-                                </svg>
-                            </div>
-                            <p class="text-center text-lg font-semibold text-slate-900 mt-1">${it.q.val} ${it.q.from}</p>
-                            <div class="grid grid-cols-2 gap-2 mt-3">
-                                ${it.opts.map((o, k) => `<button class="ws-opt" data-i="${i}" data-val="${o}" onclick="chooseWs(${i}, this)">${letters[k]}. ${o} ${it.q.to}</button>`).join('')}
-                            </div>
-                            <p id="ws-note-${i}" class="text-xs font-semibold mt-2 min-h-[16px]"></p>
-                        </div>
-                    </div>`;
-                list.appendChild(card);
-            });
-            document.getElementById('ws-feedback').textContent = '';
-            const sb = document.getElementById('ws-submit');
-            sb.disabled = false; sb.classList.remove('opacity-50');
-            sb.textContent = 'Hantar Lembaran ✅';
-            sb.onclick = checkWorksheet;
-            updateWsProgress();
-            showScreen('worksheet-screen');
-        }
-
-        function chooseWs(i, btn) {
-            if (isProcessing) return;
-            wsItems[i].chosen = parseFloat(btn.dataset.val);
-            document.querySelectorAll(`#ws-item-${i} .ws-opt`).forEach(b => b.classList.toggle('sel', b === btn));
-            document.getElementById('ws-ans-' + i).textContent = btn.dataset.val;
-            updateWsProgress();
-        }
-
-        function updateWsProgress() {
-            const done = wsItems.filter(it => it.chosen !== null).length;
-            document.getElementById('ws-progress').textContent = `Dijawab: ${done} / ${wsItems.length}`;
-        }
-
-        function checkWorksheet() {
-            if (isProcessing) return;
-            const fb = document.getElementById('ws-feedback');
-            const left = wsItems.filter(it => it.chosen === null).length;
-            if (left) {
-                fb.textContent = `⚠️ Masih ada ${left} soalan belum dijawab, Kapten!`;
-                fb.className = 'no-print mt-5 min-h-[28px] text-center text-sm font-bold text-amber-400';
-                return;
-            }
-            isProcessing = true;
-            userAnswersLog = []; score = 0; streak = 0;
-            let correct = 0;
-            wsItems.forEach((it, i) => {
-                const ok = Math.abs(it.chosen - it.q.ans) < 0.0001;
-                if (ok) { correct++; awardCorrect(); } else { streak = 0; }
-                const card = document.getElementById('ws-item-' + i);
-                card.classList.add(ok ? 'done-ok' : 'done-bad');
-                card.querySelectorAll('.ws-opt').forEach(b => {
-                    b.disabled = true;
-                    const v = parseFloat(b.dataset.val);
-                    if (Math.abs(v - it.q.ans) < 0.0001) b.classList.add('right');
-                    else if (v === it.chosen) b.classList.add('wrong');
-                });
-                const op = it.q.from === 'cm' ? `${it.q.val} × 10 = ${it.q.ans}` : `${it.q.val} ÷ 10 = ${it.q.ans}`;
-                const note = document.getElementById('ws-note-' + i);
-                note.textContent = ok ? '✅ Betul!' : `❌ Jawapan betul: ${it.q.ans} ${it.q.to} (${op})`;
-                note.className = 'text-xs font-semibold mt-2 min-h-[16px] ' + (ok ? 'text-emerald-700' : 'text-rose-700');
-                userAnswersLog.push({ qNum: it.q.qNum, questionText: `${it.q.val} ${it.q.from} = ___ ${it.q.to}`,
-                    userAns: String(it.chosen), correctAns: it.q.ans, unit: it.q.to, isCorrect: ok, type: it.q.type });
-            });
-            playSound(correct === wsItems.length ? 'win' : (correct >= wsItems.length / 2 ? 'correct' : 'wrong'));
-            fb.textContent = `Keputusan: ${correct} / ${wsItems.length} betul. Semak pembetulan di atas.`;
-            fb.className = 'no-print mt-5 min-h-[28px] text-center text-base font-bold ' + (correct === wsItems.length ? 'text-emerald-400' : 'text-amber-300');
-            const sb = document.getElementById('ws-submit');
-            sb.textContent = 'Lihat Keputusan & Simpan ➔';
-            sb.onclick = () => { isProcessing = false; endGame(); };
         }
 
         function renderArOptions(q) {
@@ -1440,7 +1505,7 @@
         }
 
         // ================== KEPUTUSAN ==================
-        const modeNames = { worksheet: 'Lembaran Kerja', diagnostic: 'Diagnostik', whole: 'Nombor Bulat', decimal: 'Perpuluhan', lab: 'Makmal Pembaris', ar: 'Pembaris AR' };
+        const modeNames = { diagnostic: 'Diagnostik', whole: 'Nombor Bulat', decimal: 'Perpuluhan', lab: 'Makmal Pembaris', ar: 'Pembaris AR' };
 
         function endGame() {
             stopCamera();
@@ -1463,6 +1528,11 @@
             const sp2Text = sp2.length ? `${sp2c} / ${sp2.length} Betul` : 'Tiada Diuji';
             document.getElementById('sp1-score').textContent = sp1Text;
             document.getElementById('sp2-score').textContent = sp2Text;
+
+            const br = document.getElementById('board-result');
+            br.textContent = boardState.reached
+                ? `🌍 Astronaut berjaya pulang ke Bumi! (🚀 ${boardState.ladders} roket, 👾 ${boardState.snakes} alien)`
+                : `🧑‍🚀 Astronaut sampai di petak ${boardState.pos} / ${BOARD_SIZE} (🚀 ${boardState.ladders} roket, 👾 ${boardState.snakes} alien)`;
 
             const title = document.getElementById('result-title'), icon = document.getElementById('result-icon');
             const pct = total ? totalCorrect / total : 0;
